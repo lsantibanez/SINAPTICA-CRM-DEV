@@ -1,1 +1,1 @@
-# SINAPTICA-CRM-DEV
+# Sinaptica

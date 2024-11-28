@@ -1,0 +1,22 @@
+{
+    "name": "sinaptica/crm_app",
+    "require": {
+        "phpoffice/phpspreadsheet":"^1.7.0",
+        "psr/simple-cache":"^1.0.1",
+        "markbaker/complex":"^3.0.2",
+        "markbaker/matrix":"^3.0.1",
+        "guzzlehttp/guzzle": "^7.8",
+        "league/csv": "^9.7",
+        "firebase/php-jwt": "^6.4",
+        "vlucas/phpdotenv": "^5.6",
+        "ramsey/uuid": "^4.2",
+        "avadim/fast-excel-reader": "^2.14",
+        "symfony/finder": "^5.4",
+        "illuminate/database": "^11.11"
+    },
+    "autoload":{
+        "psr-4": {
+            "Models\\":"app/Models/"
+        }
+    }
+}
