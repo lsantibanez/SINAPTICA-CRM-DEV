@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+Options -Indexes
+<Files ~ "\.(env|json|config.js|md|gitignore|gitattributes|lock|example|ini|conf)$">
+    Order allow,deny
+    Deny from all
+</Files>

@@ -1,0 +1,7 @@
+vendor/*
+logs/*
+includes/global/GetCedentesMandante.php
+composer.lock
+class/db/conf.ini
+class/db/vicidial_db.php
+.env
