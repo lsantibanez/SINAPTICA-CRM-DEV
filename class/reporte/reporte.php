@@ -1353,7 +1353,7 @@ class Reporte
                 $this->logs->debug('Cant: '.count((array) $Gestiones));
                 foreach((array) $Gestiones as $key => $gestion) {
                     if (!is_null($Gestiones[$key]['Listen']) && empty($Gestiones[$key]['Listen'])) {
-                        $Gestiones[$key]['Listen'] = 'https://crmgrc.sinaptica.io/storage/audios?y='.$gestion['fecha_gestion_2'].'&h='.$gestion['hora_gestion'].'&f='.$gestion['fono_discado'].'&o='.basename($gestion['Listen']);
+                        $Gestiones[$key]['Listen'] = 'http://sinaptica-crm-dev.test/storage/audios?y='.$gestion['fecha_gestion_2'].'&h='.$gestion['hora_gestion'].'&f='.$gestion['fono_discado'].'&o='.basename($gestion['Listen']);
                         //str_replace(['http://10.10.30.16/RECORDINGS/MP3/','http://10.10.30.14/RECORDINGS/MP3/'],'https://crmgrc.sinaptica.io/storage/audios?y='.$gestion['fecha_gestion'].'&h='.$gestion['hora_gestion'].'&f='.$gestion['fono_discado'], $gestion['Listen']);
                     }
                     //$Gestiones[$key]['Listen'] = str_replace(['http://10.10.30.14','http://192.168.1.31'],'https://agentesbpro2.sinaptica.io', $gestion['Listen']);

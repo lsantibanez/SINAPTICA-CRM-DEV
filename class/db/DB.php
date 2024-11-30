@@ -179,7 +179,10 @@ class Db
             return false;
         }
     }
-
+    public function escape($value) {
+        $connection = $this->connect();
+        return mysqli_real_escape_string($connection, $value);
+    }
     public function insert($query)
     {
         $connection = $this->connect();
