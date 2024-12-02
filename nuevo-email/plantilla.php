@@ -5,18 +5,18 @@ require_once('../class/db/DB.php');
 $db = new DB();
 require_once('../class/session/session.php');
 include("../class/global/global.php");
-$objetoSession = new Session('1,2,3,4,5,6',false);
+$objetoSession = new Session('1,2,3,4,5,6', false);
 $objetoSession->crearVariableSession($array = array("idMenu" => "constas,constasrut"));
 // ** Logout the current user. **
 $objetoSession->creaLogoutAction();
-if ((isset($_GET['doLogout'])) &&($_GET['doLogout']=="true")) {
+if ((isset($_GET['doLogout'])) && ($_GET['doLogout'] == "true")) {
     $objetoSession->borrarVariablesSession();
     $objetoSession->logoutGoTo("../index.php");
 }
 $validar = $_SESSION['MM_UserGroup'];
 $objetoSession->creaMM_restrictGoTo();
 $usuario = $_SESSION['MM_Username'];
-$cedente = (int) $_SESSION['cedente'];
+$cedente = (int)$_SESSION['cedente'];
 $nombreUsuario = $_SESSION['nombreUsuario'];
 $idUsuarioLogin = $_SESSION['id_usuario'];
 $nombreProyecto = $_SESSION['nombreCedente'];
@@ -42,7 +42,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <link href="/plugins/bootstrap-select/bootstrap-select.min.css" rel="stylesheet">
     <link href="/plugins/datatables/media/css/dataTables.bootstrap.css" rel="stylesheet">
     <link href="/plugins/datatables/extensions/Responsive/css/dataTables.responsive.css" rel="stylesheet">
-    <link href="/plugins/bootstrap-dataTables/jquery.dataTables.css" rel="stylesheet"  media="screen">
+    <link href="/plugins/bootstrap-dataTables/jquery.dataTables.css" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="/css/extra/flatpickr.min.css">
     <link rel="stylesheet" href="/css/extra/toastr.min.css">
     <link href="/css/global/global.css" rel="stylesheet">
@@ -52,9 +52,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             max-height: 100px;
             object-fit: contain;
         }
+
         .table th, .table td {
             vertical-align: middle;
         }
+
         .table {
             margin-top: 20px;
         }
@@ -62,7 +64,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 </head>
 <body>
 <div id="container" class="effect mainnav-lg">
-    <?php include '../layout/header.php';  ?>
+    <?php include '../layout/header.php'; ?>
     <div class="boxed">
         <div id="content-container">
             <div id="page-title">
@@ -74,39 +76,41 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             </ol><!-- breadcrumb -->
             <div id="page-content">
                 <div id="appConsultaTemplates">
-                <!-- Spinner -->
+                    <!-- Spinner -->
                     <div v-if="loading" class="text-center mt-5">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
                     </div>
-                <!-- Fin Spinner -->
-                <!--Tabla -->
+                    <!-- Fin Spinner -->
+                    <!--Tabla -->
                     <div class="row mb-4">
                         <div class="col-lg-12">
                             <div class="panel">
                                 <div class="panel-body">
                                     <h4>Listado de Plantillas</h4>
-                                    <a class="btn btn-success" href="create_template"> <i class="fa-solid fa-plus"></i> Crear Plantilla</a>
+                                    <a class="btn btn-success" href="crear-plantilla"> <i class="fa-solid fa-plus"></i>
+                                        Crear Plantilla</a>
                                     <table class="table table-sm">
                                         <thead>
                                         <tr>
                                             <th>Nombre</th>
-                                            <th style="width: 15%; text-align: center;">Disponible</th>
-                                            <th style="width: 10%; text-align: center;">Vista Previa</th>
-                                            <th style="width: 10%; text-align: center;">Creado el</th>
-                                            <th style="width: 25%; text-align: center;">Acciones</th>
+                                            <th style="width: 5%; text-align: center;">Disponible</th>
+                                            <th style="width: 15%; text-align: center;">Vista Previa</th>
+                                            <th style="width: 15%; text-align: center;">Creado el</th>
+                                            <th style="width: 10%; text-align: center;">Acciones</th>
                                         </tr>
                                         </thead>
                                         <tbody>
                                         <tr v-if="!templates.length">
                                             <td colspan="5">No hay datos.</td>
                                         </tr>
-                                        <tr v-for="template in templates" :key="template.id">
+                                        <tr v-for="template in paginatedTemplates" :key="template.id">
                                             <td>{{ template.name }}</td>
                                             <td>
                                                 <div class="form-check form-switch">
-                                                    <input :checked="template.enable"
+
+                                                    <input :checked="isEnable(template.enable)"
                                                            class="form-check-input"
                                                            type="checkbox"
                                                            role="switch"
@@ -115,32 +119,30 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                 </div>
                                             </td>
                                             <td>
-                                                <img  :src="template.urlPreview" alt="Vista Previa" class="template-image" @click="openModal(template.urlPreview)">
+                                                <img :src="template.urlPreview" alt="Vista Previa"
+                                                     class="template-image" @click="openModal(template.urlPreview)">
                                             </td>
-                                            <td>{{ template.created_at }}</td>
+                                            <td>{{ formatDateToCustomFormat(template.created_at) }}</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                        Acciones <span class="caret"></span>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <a type="submit" class="btn btn-primary" @click="doubleTemplate(template.id)">
-                                                                Duplicar
-                                                            </a>
-                                                        </li>
-                                                        <li role="separator" class="divider"></li>
-                                                        <li>
-                                                            <a class="btn btn-info" :href="'/plantillas/'+template.id+'/editar'">Editar</a>
-                                                        </li>
-                                                        <li role="separator" class="divider"></li>
-                                                        <li>
 
-                                                            <a type="submit" class="btn btn-danger" @click="deleteTemplate(template.id)">
-                                                                Eliminar
-                                                            </a>
-                                                        </li>
-                                                    </ul>
+                                                    <div class="btn-group btn-group-justified">
+                                                        <a type="submit" class="btn btn-primary"
+                                                           @click="doubleTemplate(template.id)" data-toggle="tooltip"
+                                                           data-placement="top" title="Duplicar">
+                                                            <i class="fa-regular fa-copy"></i>
+                                                        </a>
+                                                        <a class="btn btn-info"
+                                                           :href="'/nuevo-email/editar-plantilla?id='+template.id"
+                                                           data-toggle="tooltip" data-placement="top" title="Editar">
+                                                            <i class="fa-regular fa-pen-to-square"></i>
+                                                        </a>
+                                                        <a class="btn btn-danger"
+                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(template.id)">
+                                                            <i class="fa-regular fa-trash-can"></i>
+                                                        </a>
+
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -151,24 +153,26 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                     <nav>
                                         <ul class="pagination">
                                             <li :class="{ disabled: currentPage === 1 }">
-                                                <a href="#" @click.prevent="changePage(currentPage - 1)">Anterior</a>
+                                                <a href="#" @click.prevent="changePage(currentPage - 1)">&laquo;</a>
                                             </li>
                                             <li v-for="page in totalPages" :class="{ active: page === currentPage }">
                                                 <a href="#" @click.prevent="changePage(page)">{{ page }}</a>
                                             </li>
                                             <li :class="{ disabled: currentPage === totalPages }">
-                                                <a href="#" @click.prevent="changePage(currentPage + 1)">Siguiente</a>
+                                                <a href="#" @click.prevent="changePage(currentPage + 1)">&raquo;</a>
                                             </li>
                                         </ul>
                                     </nav>
+                                    <!-- Fin de controles de paginación -->
                                 </div>
                             </div>
                         </div>
                     </div>
-                <!--Fin Tabla-->
+                    <!--Fin Tabla-->
 
-                <!--Modal-->
-                    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+                    <!--Modal-->
+                    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog"
+                         aria-labelledby="imageModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -183,7 +187,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             </div>
                         </div>
                     </div>
-                <!--Fin Modal-->
+                    <!--Fin Modal-->
                 </div>
             </div><!-- page content --->
         </div><!-- page container -->
@@ -211,6 +215,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 <script src="/js/extra/flatpickr.js"></script>
 <script src="/js/extra/toastr.min.js"></script>
 <script src="/js/extra/vuejs-paginate@latest.js"></script>
+<script src="/js/extra/dayjs/dayjs.min.js"></script>
+<script src="/js/extra/dayjs/relativeTime.js"></script>
+<script src="/js/extra/dayjs/es.js"></script>
+
+
 <script>
     var app = new Vue({
         el: '#appConsultaTemplates',
@@ -218,17 +227,19 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             templates: [],
             paginatedTemplates: [],
             currentPage: 1,
-            pageSize: 2,
+            pageSize: 4,
             totalPages: 0,
             loading: true,
         },
         mounted() {
             this.getTemplates();
+            dayjs.extend(dayjs_plugin_relativeTime);
+            dayjs.locale('es');
         },
         methods: {
             getTemplates() {
                 this.loading = true;
-                axios.get('/includes/new_email/getTemplate')
+                axios.get('/includes/new_email/getTemplates')
                     .then(response => {
                         this.templates = response.data.items;
                         this.setupPagination();
@@ -239,6 +250,21 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     .finally(() => {
                         this.loading = false;
                     });
+            },
+            formatDateToHumanReadable(date) {
+            console.log(date);
+                return dayjs(date).fromNow();
+            },
+            formatDateToCustomFormat(date) {
+                return dayjs(date).format('D [de] MMMM [de] YYYY');
+            },
+            isEnable(enable){
+                if(enable === "1" ){
+
+                    return true;
+                }else{
+                    return false;
+                }
             },
             setupPagination() {
                 this.totalPages = Math.ceil(this.templates.length / this.pageSize);
@@ -262,10 +288,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 $('#imageModal').modal('show');
             },
             updateTemplateState(item) {
-                console.log(item.id);
-                const updatedEnableStatus = !item.enable;
-
-                axios.patch(`/includes/new_email/updateStatusTemplate`, {
+                console.log(item.enable)
+                const updatedEnableStatus = item.enable == 1 ? false : true;
+                axios.post(`/includes/new_email/updateStatusTemplate`, {
                     enable: updatedEnableStatus,
                     id: item.id
                 })
@@ -284,11 +309,14 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             toastr.error('Error de conexión con el servidor.');
                         }
                         console.error(error);
+                    })
+                    .finally(() => {
+                        this.getTemplates();
                     });
             },
             doubleTemplate(templateId) {
                 this.loading = true;
-                axios.get(`/includes/new_email/doubleTemplate`,{
+                axios.get(`/includes/new_email/doubleTemplate`, {
                     params: {id: templateId}
                 })
                     .then(response => {
@@ -297,7 +325,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         } else {
                             toastr.warning(response.data.message);
                         }
-                        this.fetchData();
+                        this.getTemplates();
                     })
                     .catch(error => {
                         if (error.response) {
@@ -310,6 +338,35 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         this.loading = false;
                     })
             },
+            deleteTemplate(templateId){
+                if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
+                    return;
+                }
+
+                this.loading = true;
+                axios.get(`/includes/new_email/deleteTemplate`,{
+                    params: {id: templateId}
+                })
+                    .then(response => {
+                        if (response.data.success) {
+                            toastr.success(response.data.message);
+                            this.getTemplates();
+                        } else {
+                            toastr.warning(response.data.message);
+                        }
+
+                    })
+                    .catch(error => {
+                        if (error.response) {
+                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                        } else {
+                            toastr.error('Error de conexión con el servidor.');
+                        }
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            }
 
         },
     });
