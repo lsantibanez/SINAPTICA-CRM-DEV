@@ -188,9 +188,9 @@ $noMenosDe = $otoday->sub($oneMonth)->format('Y-m-d');
                                             <div class="col-md-4">
                                                 <h6 style="margin-left: 5px;">Fecha de gestión</h6>
                                                 <div class="input-group">
-                                                    <input type="date" name="fecha_desde" class="form-control" style="line-height: 5px; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; border-right: none !important;" value="<?php echo date('Y-m') ?>-01" min="<?php echo $noMenosDe; ?>">
+                                                    <input type="date" name="fecha_desde" class="form-control" style="line-height: 25px;border-top-right-radius: 0 !important;border-bottom-right-radius: 0 !important;border-right: none !important;padding: 0;" value="<?php echo date('Y-m') ?>-01" min="<?php echo $noMenosDe; ?>">
                                                     <span class="input-group-addon" style="background-color: #efefef;">-</span>
-                                                    <input type="date" name="fecha_hasta" class="form-control" value="<?php echo date('Y-m-d') ?>" min="<?php echo $noMenosDe; ?>" style="line-height: 5px; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-left: none !important;">
+                                                    <input type="date" name="fecha_hasta" class="form-control" value="<?php echo date('Y-m-d') ?>" min="<?php echo $noMenosDe; ?>" style="line-height: 25px;padding:0; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-left: none !important;">
                                                 </div>
                                             </div> 
                                         </div>

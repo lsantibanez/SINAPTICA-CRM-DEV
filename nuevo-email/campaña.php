@@ -68,11 +68,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <div class="boxed">
         <div id="content-container">
             <div id="page-title">
-                <h1 class="page-header text-overflow">Plantillas</h1>
+                <h1 class="page-header text-overflow">Campañas</h1>
             </div><!-- page title -->
             <ol class="breadcrumb">
                 <li><a href="#">Email</a></li>
-                <li class="active">Plantillas</li>
+                <li class="active">Campañas</li>
             </ol><!-- breadcrumb -->
             <div id="page-content">
                 <div id="appConsultaTemplates">
@@ -88,15 +88,15 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         <div class="col-lg-12">
                             <div class="panel">
                                 <div class="panel-body">
-                                    <h4>Listado de Plantillas</h4>
-                                    <a class="btn btn-success" href="crear-plantilla"> <i class="fa-solid fa-plus"></i>
-                                        Crear Plantilla</a>
+                                    <h4>Listado de Campañas</h4>
+                                    <a class="btn btn-success" href="crear-campaña"> <i class="fa-solid fa-plus"></i>
+                                        Crear Campaña</a>
                                     <table class="table table-sm">
                                         <thead>
                                         <tr>
                                             <th>Nombre</th>
-                                            <th style="width: 5%; text-align: center;">Disponible</th>
-                                            <th style="width: 15%; text-align: center;">Vista Previa</th>
+                                            <th style="width: 5%; text-align: center;">Estadísticas</th>
+                                            <th style="width: 15%; text-align: center;">Estado</th>
                                             <th style="width: 15%; text-align: center;">Creado el</th>
                                             <th style="width: 10%; text-align: center;">Acciones</th>
                                         </tr>
@@ -105,40 +105,31 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         <tr v-if="!items.length">
                                             <td colspan="5">No hay datos.</td>
                                         </tr>
-                                        <tr v-for="template in paginatedTemplates" :key="template.id">
-                                            <td>{{ template.name }}</td>
+                                        <tr v-for="item in paginatedTemplates" :key="item.id">
+                                            <td>{{ item.name }}</td>
                                             <td>
-                                                <div class="form-check form-switch">
-
-                                                    <input :checked="isEnable(template.enable)"
-                                                           class="form-check-input"
-                                                           type="checkbox"
-                                                           role="switch"
-                                                           id="flexSwitchCheckDefault"
-                                                           @change="updateTemplateState(template)"/>
-                                                </div>
+                                                {{item.statistics}}
                                             </td>
                                             <td>
-                                                <img :src="template.urlPreview" alt="Vista Previa"
-                                                     class="template-image" @click="openModal(template.urlPreview)">
+                                                {{item.status}}
                                             </td>
-                                            <td>{{ formatDateToCustomFormat(template.created_at) }}</td>
+                                            <td>{{ formatDateToCustomFormat(item.created_at) }}</td>
                                             <td>
                                                 <div class="btn-group">
 
                                                     <div class="btn-group btn-group-justified">
                                                         <a type="submit" class="btn btn-primary"
-                                                           @click="doubleTemplate(template.id)" data-toggle="tooltip"
+                                                           @click="doubleTemplate(item.id)" data-toggle="tooltip"
                                                            data-placement="top" title="Duplicar">
                                                             <i class="fa-regular fa-copy"></i>
                                                         </a>
                                                         <a class="btn btn-info"
-                                                           :href="'/nuevo-email/editar-plantilla?id='+template.id"
+                                                           :href="'/nuevo-email/editar-campaña?id='+item.id"
                                                            data-toggle="tooltip" data-placement="top" title="Editar">
                                                             <i class="fa-regular fa-pen-to-square"></i>
                                                         </a>
                                                         <a class="btn btn-danger"
-                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(template.id)">
+                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(item.id)">
                                                             <i class="fa-regular fa-trash-can"></i>
                                                         </a>
 
@@ -169,25 +160,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         </div>
                     </div>
                     <!--Fin Tabla-->
-
-                    <!--Modal-->
-                    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog"
-                         aria-labelledby="imageModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                    <h4 class="modal-title" id="imageModalLabel">Vista Previa de la Imagen</h4>
-                                </div>
-                                <div class="modal-body text-center">
-                                    <img id="modalImage" src="" alt="Vista Previa Ampliada" class="img-responsive">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!--Fin Modal-->
                 </div>
             </div><!-- page content --->
         </div><!-- page container -->
@@ -224,7 +196,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     var app = new Vue({
         el: '#appConsultaTemplates',
         data: {
-            templates: [],
+            items: [],
             paginatedTemplates: [],
             currentPage: 1,
             pageSize: 4,
@@ -239,9 +211,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
         methods: {
             getTemplates() {
                 this.loading = true;
-                axios.get('/includes/templates/getTemplates')
+                axios.get('/includes/campaigns/getCampaigns')
                     .then(response => {
-                        this.templates = response.data.items;
+                        this.items = response.data.items;
                         this.setupPagination();
                     })
                     .catch(error => {
@@ -252,7 +224,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     });
             },
             formatDateToHumanReadable(date) {
-            console.log(date);
                 return dayjs(date).fromNow();
             },
             formatDateToCustomFormat(date) {
@@ -267,13 +238,13 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 }
             },
             setupPagination() {
-                this.totalPages = Math.ceil(this.templates.length / this.pageSize);
+                this.totalPages = Math.ceil(this.items.length / this.pageSize);
                 this.updatePage();
             },
             updatePage() {
                 const start = (this.currentPage - 1) * this.pageSize;
                 const end = start + this.pageSize;
-                this.paginatedTemplates = this.templates.slice(start, end);
+                this.paginatedTemplates = this.items.slice(start, end);
             },
             changePage(page) {
                 if (page >= 1 && page <= this.totalPages) {
@@ -281,92 +252,62 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     this.updatePage();
                 }
             },
-            openModal(imageUrl) {
-                const modalImage = document.getElementById('modalImage');
-                modalImage.src = imageUrl;
-
-                $('#imageModal').modal('show');
-            },
-            updateTemplateState(item) {
-                console.log(item.enable)
-                const updatedEnableStatus = item.enable == 1 ? false : true;
-                axios.post(`/includes/templates/updateStatusTemplate`, {
-                    enable: updatedEnableStatus,
-                    id: item.id
-                })
-                    .then(response => {
-                        if (response.data.success) {
-                            toastr.success(response.data.message);
-                        } else {
-                            toastr.warning(response.data.message);
-                        }
-                        item.enable = updatedEnableStatus;
-                    })
-                    .catch(error => {
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        this.getTemplates();
-                    });
-            },
-            doubleTemplate(templateId) {
-                this.loading = true;
-                axios.get(`/includes/templates/doubleTemplate`, {
-                    params: {id: templateId}
-                })
-                    .then(response => {
-                        if (response.data.success) {
-                            toastr.success(response.data.message);
-                        } else {
-                            toastr.warning(response.data.message);
-                        }
-                        this.getTemplates();
-                    })
-                    .catch(error => {
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
-                    })
-                    .finally(() => {
-                        this.loading = false;
-                    })
-            },
-            deleteTemplate(templateId){
-                if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
-                    return;
-                }
-
-                this.loading = true;
-                axios.get(`/includes/new_email/deleteTemplate`,{
-                    params: {id: templateId}
-                })
-                    .then(response => {
-                        if (response.data.success) {
-                            toastr.success(response.data.message);
-                            this.getTemplates();
-                        } else {
-                            toastr.warning(response.data.message);
-                        }
-
-                    })
-                    .catch(error => {
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
-                    })
-                    .finally(() => {
-                        this.loading = false;
-                    });
-            }
+            // updateTemplateState(item) {
+            //     console.log(item.enable)
+            //     const updatedEnableStatus = item.enable == 1 ? false : true;
+            //     axios.post(`/includes/templates/updateStatusTemplate`, {
+            //         enable: updatedEnableStatus,
+            //         id: item.id
+            //     })
+            //         .then(response => {
+            //             if (response.data.success) {
+            //                 toastr.success(response.data.message);
+            //             } else {
+            //                 toastr.warning(response.data.message);
+            //             }
+            //             item.enable = updatedEnableStatus;
+            //         })
+            //         .catch(error => {
+            //             if (error.response) {
+            //                 toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+            //             } else {
+            //                 toastr.error('Error de conexión con el servidor.');
+            //             }
+            //             console.error(error);
+            //         })
+            //         .finally(() => {
+            //             this.getTemplates();
+            //         });
+            // },
+            // deleteTemplate(templateId){
+            //     if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
+            //         return;
+            //     }
+            //
+            //     this.loading = true;
+            //     axios.get(`/includes/new_email/deleteTemplate`,{
+            //         params: {id: templateId}
+            //     })
+            //         .then(response => {
+            //             if (response.data.success) {
+            //                 toastr.success(response.data.message);
+            //                 this.getTemplates();
+            //             } else {
+            //                 toastr.warning(response.data.message);
+            //             }
+            //
+            //         })
+            //         .catch(error => {
+            //             if (error.response) {
+            //                 toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+            //             } else {
+            //                 toastr.error('Error de conexión con el servidor.');
+            //             }
+            //         })
+            //         .finally(() => {
+            //             this.loading = false;
+            //         });
+            // }
 
         },
     });

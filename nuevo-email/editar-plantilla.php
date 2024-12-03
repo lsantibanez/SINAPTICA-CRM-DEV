@@ -161,7 +161,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             methods: {
                 getTemplate() {
                     this.loading = true;
-                    axios.get(`/includes/new_email/getTemplate?id=${this.id}`)
+                    axios.get(`/includes/templates/getTemplate?id=${this.id}`)
                         .then((response) => {
                             if (response.data.success) {
                                 const templateData = response.data.item;
@@ -212,7 +212,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         html2canvas(container).then((canvas) => {
                             this.template.screenshot = canvas.toDataURL('image/png');
                             console.log(this.template.screenshot);
-                            axios.put('/includes/new_email/updateTemplate', {
+                            axios.put('/includes/templates/updateTemplate', {
                                 id: this.id,
                                 name: this.template.name,
                                 html_content: this.template.html_content,

@@ -16,7 +16,7 @@ if (!$id === null) {
     exit;
 }
 $template = new Template();
-$response = $template->deleteTemplate($id);
+$response = $template->delete($id);
 
 echo json_encode($response);
 

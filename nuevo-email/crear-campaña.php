@@ -46,17 +46,36 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <link rel="stylesheet" href="/css/extra/flatpickr.min.css">
     <link rel="stylesheet" href="/css/extra/toastr.min.css">
     <link href="/css/global/global.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
     <style>
-        #editor-container {
-            width: 100%;
-            height: 600px;
-            border: 1px solid #ccc;
+        #dropzone-container .dz-success-mark,
+        #dropzone-container .dz-error-mark {
+            display: none;
         }
-        .mt-4{
-            margin-top: 8px;
+
+        #dropzone-container .dz-remove {
+            color: red !important;
+            font-size: 18px;
+            cursor: pointer;
         }
-        .mb-4{
-            margin-bottom: 8px;
+
+        #dropzone-container .dz-remove::after {
+            content: "✖";
+        }
+
+        #dropzone-container  .dz-success-custom {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: green;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        #dropzone-container .dz-success-custom::before {
+            content: "✔ Archivo válido";
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -66,11 +85,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <div class="boxed">
         <div id="content-container">
             <div id="page-title">
-                <h1 class="page-header text-overflow">Plantillas</h1>
+                <h1 class="page-header text-overflow">Campañas</h1>
             </div><!-- page title -->
             <ol class="breadcrumb">
                 <li><a href="#">Email</a></li>
-                <li class="active">Plantillas</li>
+                <li class="active">Campañas</li>
             </ol><!-- breadcrumb -->
             <div id="page-content">
                 <div id="appConsultaTemplates">
@@ -79,7 +98,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         <div class="col-lg-12">
                             <div class="panel">
                                 <div class="panel-body">
-                                    <h4>Crear Plantillas</h4>
+                                    <h4>Crear Campañas</h4>
                                     <form @submit.prevent="submitForm" method="POST" enctype="multipart/form-data">
                                         <div class="mb-4">
                                             <label for="name" class="form-label">Nombre de Plantilla</label>
@@ -132,88 +151,136 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <script src="/js/extra/vuejs-paginate@latest.js"></script>
     <script src="https://editor.unlayer.com/embed.js"></script>
     <script src="/js/extra/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
     <script>
         var app = new Vue({
             el: '#appConsultaTemplates',
             data: {
-                template: {
+                campaign: {
                     name: '',
-                    html_content: '',
-                    json_content: '',
-                    screenshot: '',
+                    date: 0,
+                    subject: '',
+                    sender: '',
+                    emailResponse: '',
+                    unsubcribe: '',
                 },
+                excelFile: null,
+                excelValidated: false,
+                excelPreview: [],
                 loading: false,
             },
             mounted() {
-                unlayer.init({
-                    id: 'editor-container',
-                    projectId: 12345,
-                    displayMode: 'email',
+                const self = this;
+
+                const dropzone = new Dropzone("#my-dropzone", {
+                    url: "/api/dummy-endpoint",
+                    autoProcessQueue: false,
+                    paramName: "file",
+                    acceptedFiles: ".xls,.xlsx",
+                    dictDefaultMessage: "Arrastra un archivo Excel aquí para cargarlo",
+                    addRemoveLinks: true,
+                    dictRemoveFile: "",
+                    init: function () {
+                        this.on("addedfile", function (file) {
+                            self.excelFile = file;
+                            self.validateExcel(file, this);
+                        });
+
+                        this.on("removedfile", function () {
+                            self.excelFile = null;
+                            self.excelValidated = false;
+                            self.excelPreview = [];
+                        });
+                    },
                 });
+
+                this.dropzone = dropzone;
             },
             methods: {
-                takeScreenshot(event) {
-                    event.preventDefault();
+                async validateExcel(file, dropzone) {
+                    this.loading = true;
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    try {
+                        const response = await axios.post("http://plantillabackend.test/api/campaigns/verificar-excel", formData, {
+                            headers: { "Content-Type": "multipart/form-data" },
+                        });
+
+                        this.excelValidated = true;
+                        this.excelPreview = response.data.preview;
+
+                        const filePreviewElement = file.previewElement;
+                        const successIcon = document.createElement("div");
+                        successIcon.classList.add("dz-success-custom");
+                        filePreviewElement.appendChild(successIcon);
+
+                        if (response.data.success) {
+                            toastr.success(response.data.message);
+                        } else {
+                            toastr.warning(response.data.message);
+                        }
+
+                    } catch (error) {
+                        this.excelValidated = false;
+                        this.excelPreview = [];
+
+                        dropzone.removeFile(file);
+
+                        if (error.response) {
+                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                        } else {
+                            toastr.error('Error de conexión con el servidor.');
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async submitForm() {
+                    if (!this.excelFile) {
+                        toastr.error("Por favor, carga un archivo Excel antes de enviar.");
+                        return;
+                    }
+
+                    if (!this.excelValidated) {
+                        toastr.error("Por favor, valida el archivo Excel antes de continuar.");
+                        return;
+                    }
 
                     this.loading = true;
-                    const button = event.target;
-                    button.disabled = true;
 
-                    unlayer.exportHtml((data) => {
-                        this.template.html_content = data.html;
-                        this.template.json_content = JSON.stringify(data.design);
+                    try {
+                        const formData = new FormData();
 
-                        const container = document.createElement('div');
-                        container.id = 'temp-container';
-                        container.innerHTML = this.template.html_content;
-                        container.style.position = 'absolute';
-                        container.style.top = '0';
-                        container.style.left = '0';
-                        container.style.width = '800px';
-                        container.style.pointerEvents = 'none';
-                        container.style.backgroundColor = '#fff';
+                        formData.append("name", this.campaign.name);
+                        formData.append("date", this.campaign.date);
+                        formData.append("subject", this.campaign.subject);
+                        formData.append("sender", this.campaign.sender);
+                        formData.append("emailResponse", this.campaign.emailResponse);
+                        formData.append("unsubcribe", this.campaign.unsubcribe);
 
-                        document.body.appendChild(container);
+                        formData.append("file", this.excelFile);
 
-                        html2canvas(container).then((canvas) => {
-                            this.template.screenshot = canvas.toDataURL('image/png');
-                            console.log(this.template.screenshot);
-                            axios.post('/includes/templates/insertTemplate', {
-                                name: this.template.name,
-                                html_content: this.template.html_content,
-                                json_content: this.template.json_content,
-                                screenshot: this.template.screenshot,
-                            },{
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                }
-                            })
-                                .then((response) => {
-                                    if (response.data.success) {
-                                        toastr.success(response.data.message);
-                                    } else {
-                                        toastr.warning(response.data.message);
-                                    }
-                                })
-                                .catch((error) => {
-                                    if (error.response) {
-                                        toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                                    } else {
-                                        toastr.error('Error de conexión con el servidor.');
-                                    }
-                                })
-                                .finally(() => {
-                                    this.loading = false;
-                                    button.disabled = false;
-                                    document.body.removeChild(container);
-                                });
-                        }).catch((error) => {
-                            toastr.error('Error al generar la imagen:', error);
-                            this.loading = false;
-                            button.disabled = false;
-                            document.body.removeChild(container);
+                        const response = await axios.post("http://plantillabackend.test/api/campaigns", formData, {
+                            headers: { "Content-Type": "multipart/form-data" },
                         });
-                    });
+
+                        if (response.data.success) {
+                            toastr.success(response.data.message);
+                            this.removeFile(file);
+                        } else {
+                            toastr.error(response.data.message);
+                        }
+                    } catch (error) {
+                        if (error.response) {
+                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                        } else {
+                            toastr.error('Error de conexión con el servidor.');
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
                 },
             },
         });

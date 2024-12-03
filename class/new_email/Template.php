@@ -21,7 +21,7 @@ class Template {
         $this->logs = new Logs();
     }
 
-    function getTemplates() {
+    function getAllTemplates() {
         try {
             $sqlTemplate = "SELECT id, name, urlPreview, created_at, enable 
                         FROM mail_templates 
@@ -61,7 +61,7 @@ class Template {
             ];
         }
     }
-    function insertTemplate($request)
+    function insert($request)
     {
         $templateName = $this->db->escape($request['name']);
         $sqlCheck = "SELECT COUNT(*) as count FROM mail_templates WHERE name = '$templateName'";
@@ -151,7 +151,7 @@ class Template {
             ];
         }
     }
-    function updateTemplate($request)
+    function update($request)
     {
         $templateId = $this->db->escape($request['id']);
         $templateName = $this->db->escape($request['name']);
@@ -237,7 +237,7 @@ class Template {
             ];
         }
     }
-    function updateStatus($id,$enable)
+    function changeStatus($id, $enable)
     {
 
         try {
@@ -272,7 +272,7 @@ class Template {
         }
     }
 
-    function doubleTemplate($id) {
+    function double($id) {
         try {
             $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
             $template = $this->db->select($sql);
@@ -377,7 +377,7 @@ class Template {
         }
     }
 
-    function deleteTemplate($id){
+    function delete($id){
         $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
         $template = $this->db->select($sql);
 

@@ -205,6 +205,15 @@ class Db
         return $return;
     }
 
+    public function insertWithParams($table, $data)
+    {
+        $columns = implode(", ", array_keys($data));
+        $values = implode(", ", array_map([$this, 'quote'], array_values($data)));
+
+        $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+        return $this->insert($sql);
+    }
+
     public function getErrorMessage(){
         //return $this->Server."/".mysql_error();
         //return $this->Server."/".mysqli_error($link);
@@ -227,6 +236,14 @@ class Db
             $this->logs->error(' [DB->SELECT]['.$this->Link.'] '.$ex->getMessage());
         }
         return $rows;
+    }
+
+    public function selectWithParams($table,$data){
+        $columns = implode(", ", array_keys($data));
+        $values = implode(", ", array_map([$this, 'quote'], array_values($data)));
+
+        $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+        return $this->select($sql);
     }
 
         /**
