@@ -43,10 +43,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <link href="/plugins/datatables/media/css/dataTables.bootstrap.css" rel="stylesheet">
     <link href="/plugins/datatables/extensions/Responsive/css/dataTables.responsive.css" rel="stylesheet">
     <link href="/plugins/bootstrap-dataTables/jquery.dataTables.css" rel="stylesheet"  media="screen">
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
     <link rel="stylesheet" href="/css/extra/flatpickr.min.css">
     <link rel="stylesheet" href="/css/extra/toastr.min.css">
     <link href="/css/global/global.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+    <link href="/css/global/estilos.css" rel="stylesheet">
     <style>
         #dropzone-container .dz-success-mark,
         #dropzone-container .dz-error-mark {
@@ -77,6 +78,20 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             content: "✔ Archivo válido";
             margin-right: 10px;
         }
+        #dropzone-container .dz-error-custom {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: red;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        #dropzone-container .dz-error-custom::before {
+            content: "❌ Archivo no válido";
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -99,25 +114,72 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             <div class="panel">
                                 <div class="panel-body">
                                     <h4>Crear Campañas</h4>
-                                    <form @submit.prevent="submitForm" method="POST" enctype="multipart/form-data">
-                                        <div class="mb-4">
-                                            <label for="name" class="form-label">Nombre de Plantilla</label>
-                                            <input type="text" id="name" class="form-control" v-model="template.name"
-                                                   placeholder="Enter template name" required/>
+                                    <form @submit.prevent="submitForm">
+                                        <div class="row">
+
+                                            <div class="col-md-8">
+                                                <div class="mb-4">
+                                                    <label for="name" class="form-label">Nombre de la Campaña</label>
+                                                    <input type="text" id="name" class="form-control" v-model="campaign.name" required/>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <div class="mb-4">
+                                                    <label for="date" class="form-label">Envío Programado</label>
+                                                    <select class="form-control mb-0" v-model="campaign.date" id="date">
+                                                        <option selected value="0">No</option>
+                                                        <option value="1">Si</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-4">
+                                                    <label for="subject" class="form-label">Asunto:</label>
+                                                    <input type="text" id="subject" class="form-control" v-model="campaign.subject" required/>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-4">
+                                                    <label for="sender" class="form-label">Nombre remitente:</label>
+                                                    <input type="text" id="sender" class="form-control" v-model="campaign.sender" required/>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-4">
+                                                    <label for="emailResponse" class="form-label">Correo de respuesta:</label>
+                                                    <input type="email" id="emailResponse" class="form-control" v-model="campaign.emailResponse"
+                                                           required/>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-4">
+                                                    <label for="unsubcribe" class="form-label">Url desuscribir:</label>
+                                                    <input type="url" id="unsubcribe" class="form-control" v-model="campaign.unsubcribe"
+                                                           required/>
+                                                </div>
+                                            </div>
+
                                         </div>
 
-                                        <div id="capture">
-                                            <div id="editor-container" class="mb-4" style="min-height: 400px;"></div>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center mt-4">
-                                            <button @click="takeScreenshot" class="btn btn-primary">
-                                                Guardar Plantilla
+                                        <div class="d-flex justify-content-between align-items-center my-4">
+                                            <button class="btn btn-primary">
+                                                Guardar Campaña
                                             </button>
                                             <span v-if="loading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
-                                            <a class="btn btn-secondary" href="plantilla">Regresar</a>
+                                            <a class="btn btn-warning" href="/nuevo-email/campaña">Regresar</a>
                                         </div>
                                     </form>
+                                    <div class="col-md-12">
+                                        <div class="mb-4" id="dropzone-container">
+                                            <label for="file" class="form-label">Carga de archivos base (Excel):</label>
+                                            <form action="/target" class="dropzone" id="my-dropzone"></form>
+                                        </div>
+                                    </div>
 
                                 </div>
                             </div>
@@ -171,8 +233,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             },
             mounted() {
                 const self = this;
+                if (Dropzone.instances.length > 0) {
+                    Dropzone.instances.forEach(instance => instance.destroy());
+                }
 
-                const dropzone = new Dropzone("#my-dropzone", {
+                this.dropzone = new Dropzone("#my-dropzone", {
                     url: "/api/dummy-endpoint",
                     autoProcessQueue: false,
                     paramName: "file",
@@ -193,8 +258,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         });
                     },
                 });
-
-                this.dropzone = dropzone;
             },
             methods: {
                 async validateExcel(file, dropzone) {
@@ -204,47 +267,50 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     formData.append("file", file);
 
                     try {
-                        const response = await axios.post("http://plantillabackend.test/api/campaigns/verificar-excel", formData, {
+                        const response = await axios.post("/includes/campaigns/validateExcelCampaign", formData, {
                             headers: { "Content-Type": "multipart/form-data" },
                         });
 
-                        this.excelValidated = true;
-                        this.excelPreview = response.data.preview;
-
-                        const filePreviewElement = file.previewElement;
-                        const successIcon = document.createElement("div");
-                        successIcon.classList.add("dz-success-custom");
-                        filePreviewElement.appendChild(successIcon);
-
                         if (response.data.success) {
+                            this.excelValidated = true;
+                            this.excelPreview = response.data.preview;
+
+                            const filePreviewElement = file.previewElement;
+                            const successIcon = document.createElement("div");
+                            successIcon.classList.add("dz-success-custom");
+                            filePreviewElement.appendChild(successIcon);
+
                             toastr.success(response.data.message);
                         } else {
-                            toastr.warning(response.data.message);
+                            this.handleInvalidFile(file, dropzone, response.data.message);
                         }
-
                     } catch (error) {
-                        this.excelValidated = false;
-                        this.excelPreview = [];
-
-                        dropzone.removeFile(file);
-
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
+                        this.handleInvalidFile(file, dropzone, 'Ocurrió un error al procesar la solicitud.');
                     } finally {
                         this.loading = false;
                     }
                 },
+                handleInvalidFile(file, dropzone, message) {
+                    this.excelValidated = false;
+                    this.excelPreview = [];
+
+                    const filePreviewElement = file.previewElement;
+                    const errorIcon = document.createElement("div");
+                    errorIcon.classList.add("dz-error-custom");
+                    filePreviewElement.appendChild(errorIcon);
+
+                    dropzone.removeFile(file);
+
+                    toastr.warning(message || "Archivo no válido");
+                },
                 async submitForm() {
                     if (!this.excelFile) {
-                        toastr.error("Por favor, carga un archivo Excel antes de enviar.");
+                        toastr.warning("Por favor, carga un archivo Excel antes de enviar.");
                         return;
                     }
 
                     if (!this.excelValidated) {
-                        toastr.error("Por favor, valida el archivo Excel antes de continuar.");
+                        toastr.warning("Por favor, valida el archivo Excel antes de continuar.");
                         return;
                     }
 
@@ -262,13 +328,12 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                         formData.append("file", this.excelFile);
 
-                        const response = await axios.post("http://plantillabackend.test/api/campaigns", formData, {
+                        const response = await axios.post("/includes/campaigns/insertCampaign", formData, {
                             headers: { "Content-Type": "multipart/form-data" },
                         });
 
                         if (response.data.success) {
                             toastr.success(response.data.message);
-                            this.removeFile(file);
                         } else {
                             toastr.error(response.data.message);
                         }

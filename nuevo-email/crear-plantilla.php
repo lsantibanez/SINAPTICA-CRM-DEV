@@ -46,17 +46,12 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <link rel="stylesheet" href="/css/extra/flatpickr.min.css">
     <link rel="stylesheet" href="/css/extra/toastr.min.css">
     <link href="/css/global/global.css" rel="stylesheet">
+    <link href="/css/global/estilos.css" rel="stylesheet">
     <style>
         #editor-container {
             width: 100%;
             height: 600px;
             border: 1px solid #ccc;
-        }
-        .mt-4{
-            margin-top: 8px;
-        }
-        .mb-4{
-            margin-bottom: 8px;
         }
     </style>
 </head>
