@@ -160,6 +160,8 @@ class Campaign
                 'sender' => $request['sender'],
                 'status' => 'CARGADA',
                 'created_at' => date('Y-m-d H:i:s'),
+                'idCedente' => $this->idCedente,
+                'idMandante' => $this->idMandante
             ];
             $campaignId = $this->db->insertWithParams('mail_campaigns', $campaignData);
             $this->logs->debug($campaignId);
@@ -188,9 +190,63 @@ class Campaign
                 }
             }
 
-            return ['success' => true, 'message' => 'Campaña creada y datos almacenados exitosamente.'];
+            return ['success' => true, 'message' => 'Campaña creada y datos almacenados exitosamente.', 'campaignId' => $campaignId];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Error al procesar la campaña: ' . $e->getMessage()];
+        }
+    }
+
+    function customVariables($id)
+    {
+        try {
+            $sql = "
+            SELECT mde.customVariables
+            FROM mail_campaigns mc
+            INNER JOIN mail_data_emails mde ON mc.id = mde.campaign_id
+            WHERE mc.id = " . intval($id) . "
+            LIMIT 1";
+
+            $this->logs->debug($sql);
+
+            $result = $this->db->select($sql);
+            $this->logs->debug($result);
+            if (!$result || count($result) === 0) {
+                $this->logs->error("No se encontró información para la campaña con id: " . $id);
+                return [
+                    'success' => false,
+                    'message' => 'No se encontró información para la campaña.',
+                    'items' => [],
+                ];
+            }
+
+            $customVariables = $result[0]['customVariables'];
+            $customVariables = is_string($customVariables) ? json_decode($customVariables, true) : $customVariables;
+
+            if (!is_array($customVariables)) {
+                $this->logs->error("El campo customVariables no tiene un formato válido.");
+                return [
+                    'success' => false,
+                    'message' => 'El campo customVariables no tiene un formato válido.',
+                    'items' => [],
+                ];
+            }
+
+            $keysInUppercase = array_filter(array_keys($customVariables), function ($key) {
+                return preg_match('/^[A-Z_]+$/', $key);
+            });
+
+            return [
+                'success' => true,
+                'items' => array_values($keysInUppercase),
+            ];
+
+        } catch (Exception $e) {
+            $this->logs->error("Error al procesar customVariables: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al procesar customVariables.',
+                'error' => $e->getMessage(),
+            ];
         }
     }
 

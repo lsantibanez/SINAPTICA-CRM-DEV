@@ -334,6 +334,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                         if (response.data.success) {
                             toastr.success(response.data.message);
+                            window.location.href = "http://sinaptica-crm-dev.test/nuevo-email/seleccionar-plantilla?id="+campaignId;
                         } else {
                             toastr.error(response.data.message);
                         }

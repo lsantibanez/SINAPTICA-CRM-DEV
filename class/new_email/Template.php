@@ -21,21 +21,30 @@ class Template {
         $this->logs = new Logs();
     }
 
-    function getAllTemplates() {
+    function getAllTemplates($search = null) {
         try {
             $sqlTemplate = "SELECT id, name, urlPreview, created_at, enable 
                         FROM mail_templates 
                         WHERE idCedente='" . $this->idCedente . "' 
                         AND idMandante='" . $this->idMandante . "' 
-                        AND isDeleted = 0 
-                        ORDER BY id DESC";
+                        AND isDeleted = 0";
+
+            if ($search) {
+                $sqlTemplate .= " AND (name LIKE '%" . $search . "%')";
+            }
+
+            $sqlTemplate .= " ORDER BY id DESC";
 
             $templates = $this->db->select($sqlTemplate);
 
-            return ['success' => true, 'items' => $templates];
+            if ($templates) {
+                return ['success' => true, 'items' => $templates];
+            } else {
+                return ['success' => false, 'items' => []];
+            }
         } catch (Exception $e) {
             $this->logs->error($e->getMessage());
-            return ['success' => false, 'items' => []];
+            return ['success' => false, 'items' => [], 'error' => $e->getMessage()];
         }
     }
 
@@ -271,7 +280,6 @@ class Template {
             ];
         }
     }
-
     function double($id) {
         try {
             $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
@@ -376,7 +384,6 @@ class Template {
             ];
         }
     }
-
     function delete($id){
         $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
         $template = $this->db->select($sql);
@@ -409,6 +416,10 @@ class Template {
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    function selectTemplate($id,$campaignId){
+        return [$id,$campaignId];
     }
 
 }

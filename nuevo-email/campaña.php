@@ -118,16 +118,17 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                 <div class="btn-group">
 
                                                     <div class="btn-group btn-group-justified">
-                                                        <a type="submit" class="btn btn-primary"
-                                                           @click="doubleTemplate(item.id)" data-toggle="tooltip"
-                                                           data-placement="top" title="Duplicar">
-                                                            <i class="fa-regular fa-copy"></i>
-                                                        </a>
                                                         <a class="btn btn-info"
                                                            :href="'/nuevo-email/editar-campaña?id='+item.id"
                                                            data-toggle="tooltip" data-placement="top" title="Editar">
                                                             <i class="fa-regular fa-pen-to-square"></i>
                                                         </a>
+                                                        <a class="btn btn-success"
+                                                           :href="'/nuevo-email/seleccionar-plantilla?id='+item.id"
+                                                           data-toggle="tooltip" data-placement="top" title="Seleccionar Plantilla">
+                                                            <i class="fa-regular fa-hand-pointer"></i>
+                                                        </a>
+
                                                         <a class="btn btn-danger"
                                                            data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(item.id)">
                                                             <i class="fa-regular fa-trash-can"></i>
