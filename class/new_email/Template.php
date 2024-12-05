@@ -419,7 +419,69 @@ class Template {
     }
 
     function selectTemplate($id,$campaignId){
-        return [$id,$campaignId];
+
+        $sql = "SELECT * FROM mail_campaigns WHERE id = ".$campaignId;
+        $campaign = $this->db->select($sql);
+        if(!$campaign) return ['success' => false, 'message' => 'No se encontró la campaña con el id '.$campaignId];
+
+        if($campaign[0]['template_id'] == $id) return ['success' => false, 'message' => 'Esta plantilla ya ha sido seleccionada'];
+
+        $sql = "";
+
+        $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
+        $template = $this->db->select($sql);
+        if(!$template) return ['success' => false, 'message' => 'No se encontró la plantilla con el id '.$id];
+
+        $sql = "";
+
+        $sql = "SELECT * FROM mail_data_emails WHERE campaign_id=".$campaignId. " LIMIT 1" ;
+        $data_email = $this->db->select($sql);
+
+        $sql = "";
+
+        $campaignVariables = [];
+        if ($data_email && isset($data_email[0]['customVariables'])){
+            $decodedVariables = json_decode($data_email[0]['customVariables'], true);
+
+            if (is_array($decodedVariables)) {
+                $campaignVariables = array_keys(array_change_key_case($decodedVariables, CASE_UPPER));
+            }
+        }
+
+        $templateVariables = [];
+        if (is_string($template[0]['customVariables'])) {
+            $decodedTemplateVariables = json_decode($template[0]['customVariables'], true);
+            if (is_array($decodedTemplateVariables)) {
+                $templateVariables = array_map('strtoupper', $decodedTemplateVariables);
+            }
+        } elseif (is_array($template[0]['customVariables'])) {
+            $templateVariables = array_map('strtoupper', $template[0]['customVariables']);
+        }
+
+        $missingVariables = array_diff($templateVariables, $campaignVariables);
+
+        if (!empty($missingVariables)) {
+            return [
+                'success' => false,
+                'message' => 'Esta plantilla necesita las siguientes llaves para poder seleccionarse: ' . implode(', ', $missingVariables),
+            ];
+        }
+
+
+        try {
+           $sql = "UPDATE  mail_campaigns
+                   SET template_id= ".$id.
+                  " WHERE id= ".$campaignId;
+
+           $this->db->query($sql);
+           return ['success' => true,'message' => 'Se ha seleccionado la plantilla correctamente.'];
+        }catch (Exception $e) {
+            $this->logs->error($e->getMessage());
+            return ['success' => false, 'items' => []];
+        }
+
+
+
     }
 
 }

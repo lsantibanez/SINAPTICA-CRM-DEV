@@ -136,7 +136,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                     <!--                                    Cabecera-->
                                     <div class="d-flex justify-between items-baseline mb-3">
                                         <h3>Variables disponibles desde el archivo Excel</h3>
-                                        <a href="/includes" class="btn btn-success"><i class="fa-solid fa-plus"></i>
+                                        <a href="/nuevo-email/crear-plantilla" class="btn btn-success"><i class="fa-solid fa-plus"></i>
                                             Crear Plantilla</a>
                                     </div>
 
@@ -198,7 +198,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                                     <i class="glyphicon glyphicon-ok"></i> Seleccionar
                                                                 </button>
                                                             </form>
-                                                            <form @submit="doubleTemplate(template.id)" class="m-0">
+                                                            <form @submit.prevent="doubleTemplate(template.id)" class="m-0">
                                                                 <button type="submit" class="btn btn-info btn-sm">
                                                                     <i class="glyphicon glyphicon-duplicate"></i>
                                                                 </button>
@@ -369,7 +369,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         campaignId: this.id,
                     };
 
-                    axios.patch(`/includes/templates/selectTemplate?id=${templateId}`, data)
+                    axios.post(`/includes/templates/selectTemplate?id=${templateId}`, data)
                         .then(response => {
                             if (response.data.success) {
                                 toastr.success(response.data.message);

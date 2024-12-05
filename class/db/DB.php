@@ -214,6 +214,44 @@ class Db
         return $this->insert($sql);
     }
 
+    public function update($query)
+    {
+        $connection = $this->connect();
+        $return = false;
+        try {
+            if ($connection) {
+                $result = mysqli_query($connection, $query);
+                if ($result) {
+                    $return = mysqli_affected_rows($connection) > 0;
+                } else {
+                    $error = mysqli_error($connection);
+                    $this->logs->error(' [DB->UPDATE]['.$this->Link.'] '. $error);
+                }
+            }
+        } catch (\Exception $ex) {
+            $this->logs->error($ex->getMessage());
+        }
+        return $return;
+    }
+    public function updateWithParams($table, $data, $conditions)
+    {
+        $setClauses = [];
+        foreach ($data as $column => $value) {
+            $setClauses[] = "$column = " . $this->quote($value);
+        }
+        $setPart = implode(", ", $setClauses);
+
+        $whereClauses = [];
+        foreach ($conditions as $column => $value) {
+            $whereClauses[] = "$column = " . $this->quote($value);
+        }
+        $wherePart = implode(" AND ", $whereClauses);
+
+        $sql = "UPDATE $table SET $setPart WHERE $wherePart";
+
+        return $this->update($sql);
+    }
+
     public function getErrorMessage(){
         //return $this->Server."/".mysql_error();
         //return $this->Server."/".mysqli_error($link);

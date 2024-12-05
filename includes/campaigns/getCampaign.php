@@ -1,6 +1,6 @@
 <?php
 
-include_once("../../class/new_email/Template.php");
+include_once("../../class/new_email/Campaign.php");
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -15,7 +15,7 @@ if ($id === null) {
     exit;
 }
 
-$template = new Template();
-$response = $template->getTemplate($id);
+$campaign = new Campaign();
+$response = $campaign->getCampaign($id);
 
 echo json_encode($response);
