@@ -179,7 +179,10 @@ class Db
             return false;
         }
     }
-
+    public function escape($value) {
+        $connection = $this->connect();
+        return mysqli_real_escape_string($connection, $value);
+    }
     public function insert($query)
     {
         $connection = $this->connect();
@@ -200,6 +203,15 @@ class Db
             $this->logs->error($ex->getMessage());
         }
         return $return;
+    }
+
+    public function insertWithParams($table, $data)
+    {
+        $columns = implode(", ", array_keys($data));
+        $values = implode(", ", array_map([$this, 'quote'], array_values($data)));
+
+        $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+        return $this->insert($sql);
     }
 
     public function getErrorMessage(){
@@ -224,6 +236,14 @@ class Db
             $this->logs->error(' [DB->SELECT]['.$this->Link.'] '.$ex->getMessage());
         }
         return $rows;
+    }
+
+    public function selectWithParams($table,$data){
+        $columns = implode(", ", array_keys($data));
+        $values = implode(", ", array_map([$this, 'quote'], array_values($data)));
+
+        $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+        return $this->select($sql);
     }
 
         /**
