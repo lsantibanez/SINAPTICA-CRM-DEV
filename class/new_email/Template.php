@@ -474,7 +474,7 @@ class Template {
                   " WHERE id= ".$campaignId;
 
            $this->db->query($sql);
-           return ['success' => true,'message' => 'Se ha seleccionado la plantilla correctamente.'];
+           return ['success' => true,'message' => 'Se ha seleccionado la plantilla correctamente.','item' => $template[0]];
         }catch (Exception $e) {
             $this->logs->error($e->getMessage());
             return ['success' => false, 'items' => []];
@@ -483,5 +483,68 @@ class Template {
 
 
     }
+    function unselectTemplate($id){
+        try {
+            $sql = "UPDATE mail_campaigns SET template_id = null WHERE id = ".$id;
+            $this->db->query($sql);
+            return ['success' => true];
+        } catch(Exception $e){
+            $this->logs->error($e->getMessage());
+        }
+    }
 
+    function asignCustomVariablesTemplate($templateId, $campignId) {
+        try {
+            $sql = "SELECT html_content FROM mail_templates WHERE campaign_id = ".$templateId;
+            $template = $this->db->select($sql);
+            if (empty($template)) {
+                $this->logs->error('Plantilla no encontrada con el id: '.$templateId);
+                return ['success' => false,'items' => []];
+            }
+
+            $sql = "SELECT customVariables FROM mail_data_emails WHERE campaign_id = ".$campignId." LIMIT 5";
+            $data_emails = $this->db->select($sql);
+            if (empty($data_emails)) {
+                $this->logs->error('No se encontraron registros en la tabla mail_data_emails con el id: '.$campignId);
+                return ['success' => false,'items' => []];
+            }
+
+            $htmlContent = $template[0]['html_content'];
+
+            preg_match_all('/\|\|{(.*?)}\|\|/', $htmlContent, $matches);
+            $variablesInTemplate = $matches[1];
+
+            if (empty($variablesInTemplate)) {
+                $this->logs->error('No se encontraron variables en el contenido HTML de la plantilla');
+                return ['success' => false,'items' => []];
+            }
+
+            $results = [];
+
+            foreach ($data_emails as $data) {
+                $customVariables = json_decode($data['customVariables'], true);
+                if (!is_array($customVariables)) {
+                    $this->logs->error('No hay custom variables en este registro de la tabla mail_data_emails.');
+                    return ['success' => false,'items' => []];
+                }
+
+                $processedHtml = $htmlContent;
+
+                foreach ($variablesInTemplate as $var) {
+                    $replacement = isset($customVariables[$var]) ? $customVariables[$var] : '';
+                    $processedHtml = str_replace("||{" . $var . "}||", $replacement, $processedHtml);
+                }
+
+                $results[] = [
+                    'processed_html' => $processedHtml
+                ];
+            }
+
+            return ['success' => true, 'items' => $results];
+
+        } catch (Exception $e) {
+            $this->logs->error($e->getMessage());
+            return ['success' => false, 'items' => []];
+        }
+    }
 }

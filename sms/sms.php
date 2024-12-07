@@ -237,9 +237,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             dayjs.locale('es');
         },
         methods: {
-            getTemplates() {
+            getSms() {
                 this.loading = true;
-                axios.get('/includes/templates/getTemplates')
+                axios.get('/includes/sms/getSms')
                     .then(response => {
                         this.templates = response.data.items;
                         this.setupPagination();
@@ -252,7 +252,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     });
             },
             formatDateToHumanReadable(date) {
-            console.log(date);
+                console.log(date);
                 return dayjs(date).fromNow();
             },
             formatDateToCustomFormat(date) {
@@ -280,39 +280,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     this.currentPage = page;
                     this.updatePage();
                 }
-            },
-            openModal(imageUrl) {
-                const modalImage = document.getElementById('modalImage');
-                modalImage.src = imageUrl;
-
-                $('#imageModal').modal('show');
-            },
-            updateTemplateState(item) {
-                console.log(item.enable)
-                const updatedEnableStatus = item.enable == 1 ? false : true;
-                axios.post(`/includes/templates/updateStatusTemplate`, {
-                    enable: updatedEnableStatus,
-                    id: item.id
-                })
-                    .then(response => {
-                        if (response.data.success) {
-                            toastr.success(response.data.message);
-                        } else {
-                            toastr.warning(response.data.message);
-                        }
-                        item.enable = updatedEnableStatus;
-                    })
-                    .catch(error => {
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        this.getTemplates();
-                    });
             },
             doubleTemplate(templateId) {
                 this.loading = true;

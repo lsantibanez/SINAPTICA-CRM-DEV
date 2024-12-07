@@ -154,6 +154,7 @@ class Campaign
 
             $campaignData = [
                 'name' => $request['name'],
+                'date' => $request['date'] ?? null,
                 'subject' => $request['subject'],
                 'schedule' => 0,
                 'emailResponse' => $request['emailResponse'],

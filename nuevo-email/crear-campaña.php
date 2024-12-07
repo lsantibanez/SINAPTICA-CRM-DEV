@@ -126,18 +126,25 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                                             <div class="col-md-4">
                                                 <div class="mb-4">
-                                                    <label for="date" class="form-label">Envío Programado</label>
-                                                    <select class="form-control mb-0" v-model="campaign.date" id="date">
+                                                    <label for="programmed" class="form-label">Envío Programado</label>
+                                                    <select class="form-control mb-0" v-model="programmed" id="programmed">
                                                         <option selected value="0">No</option>
                                                         <option value="1">Si</option>
                                                     </select>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-12">
+                                            <div :class="programmed === '1' ? 'col-md-8':'col-md-12'">
                                                 <div class="mb-4">
                                                     <label for="subject" class="form-label">Asunto:</label>
                                                     <input type="text" id="subject" class="form-control" v-model="campaign.subject" required/>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4" v-if="programmed === '1'">
+                                                <div class="mb-4">
+                                                    <label for="date" class="form-label">Fecha de envío:</label>
+                                                    <input type="datetime-local" :min="minDateTime"  id="date" class="form-control" style="line-height: 16px !important;" v-model="campaign.date" required />
                                                 </div>
                                             </div>
 
@@ -211,13 +218,13 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <script src="/js/extra/flatpickr.js"></script>
     <script src="/js/extra/toastr.min.js"></script>
     <script src="/js/extra/vuejs-paginate@latest.js"></script>
-    <script src="https://editor.unlayer.com/embed.js"></script>
     <script src="/js/extra/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    <script src="/js/extra/dropzone.min.js"></script>
     <script>
         var app = new Vue({
             el: '#appConsultaTemplates',
             data: {
+                programmed : 0,
                 campaign: {
                     name: '',
                     date: 0,
@@ -259,7 +266,20 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     },
                 });
             },
+            computed: {
+                minDateTime() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+                    return `${year}-${month}-${day}T${hours}:${minutes}`;
+                },
+            },
             methods: {
+
                 async validateExcel(file, dropzone) {
                     this.loading = true;
 
@@ -320,7 +340,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         const formData = new FormData();
 
                         formData.append("name", this.campaign.name);
-                        formData.append("date", this.campaign.date);
+                        formData.append("date", this.campaign.date ?? null);
                         formData.append("subject", this.campaign.subject);
                         formData.append("sender", this.campaign.sender);
                         formData.append("emailResponse", this.campaign.emailResponse);
