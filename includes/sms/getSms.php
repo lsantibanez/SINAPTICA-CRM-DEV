@@ -1,8 +1,8 @@
 <?php
 
-include_once("../../class/sms/Sms.php");
+include_once("../../class/sms/CampaignSms.php");
 
-$template = new Sms();
+$template = new CampaignSms();
 
 $search = isset($_GET['search']) ? $_GET['search'] : null;
 
