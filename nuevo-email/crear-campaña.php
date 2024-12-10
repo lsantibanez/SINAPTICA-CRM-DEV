@@ -174,7 +174,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         </div>
 
                                         <div class="d-flex justify-content-between align-items-center my-4">
-                                            <button class="btn btn-primary">
+                                            <button v-if="loading" class="btn btn-primary">
                                                 Guardar Campaña
                                             </button>
                                             <span v-if="loading" class="spinner-border spinner-border-sm text-primary" role="status"></span>

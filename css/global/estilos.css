@@ -78,3 +78,13 @@
 .text-xl {
     font-size: 24px;
 }
+
+.border-0 {
+    border: none;
+}
+.b-radius-1{
+    border-radius: 4px !important;
+}
+.p-2{
+    padding: 5px !important;
+}

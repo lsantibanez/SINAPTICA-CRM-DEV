@@ -24,7 +24,8 @@ class CampaignSms
         $this->logs = new Logs();
     }
 
-    function getAllSms($search = null) {
+    function getAllSms($search = null)
+    {
         try {
 
             $sql = "SELECT id,name,phone,start_date,end_date,status,created_at 
@@ -51,7 +52,8 @@ class CampaignSms
         }
     }
 
-    function verifyExcel($file) {
+    function verifyExcel($file)
+    {
         $allowedExtensions = ['xls', 'xlsx'];
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         if (!in_array($extension, $allowedExtensions)) {
@@ -67,7 +69,7 @@ class CampaignSms
             $highestColumn = $sheet->getHighestColumn();
             $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
 
-            $requiredHeaders = ['IDENTIFICACION', 'FONO'];
+            $requiredHeaders = ['IDENTIFICADOR', 'FONO'];
             $fileHeaders = array_map('strtoupper', $headers);
 
             $missingHeaders = array_diff($requiredHeaders, $fileHeaders);
@@ -85,13 +87,25 @@ class CampaignSms
                 $preview[] = array_combine($fileHeaders, $row);
             }
 
-            return ['success' => true, 'message' => 'El archivo es válido.', 'preview' => $preview];
+            usort($preview, function ($a, $b) {
+                return $a['IDENTIFICADOR'] <=> $b['IDENTIFICADOR'];
+            });
+
+            $firstFiveRecords = array_slice($preview, 0, 5);
+
+            return [
+                'success' => true,
+                'message' => 'El archivo es válido.',
+                'headers' => $fileHeaders,
+                'topRecords' => $firstFiveRecords
+            ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Error al procesar el archivo: ' . $e->getMessage()];
         }
     }
 
-    function insert($rerquest){
+    function insert($rerquest)
+    {
         return $rerquest;
     }
 

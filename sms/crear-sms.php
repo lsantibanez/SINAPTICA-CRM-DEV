@@ -99,21 +99,22 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             <div class="col-md-12 p-0" v-if="isUploaded">
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="phone" class="form-label">Seleccione columna
-                                                            teléfono del archivo</label>
+                                                        <label for="phone" class="form-label">Seleccione columna teléfono del archivo</label>
                                                         <select class="form-control" v-model="item.phone" id="phone">
-                                                            <option>Test</option>
+                                                            <option v-for="phone in phones" :key="phone" :value="phone">
+                                                                {{ phone }}
+                                                            </option>
                                                         </select>
                                                     </div>
                                                 </div>
 
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="identity" class="form-label">Seleccione Documento o
-                                                            DNI. Opcional *</label>
-                                                        <select class="form-control" v-model="item.identity"
-                                                                id="identity">
-                                                            <option>Test</option>
+                                                        <label for="identity" class="form-label">Seleccione Documento o DNI. Opcional *</label>
+                                                        <select class="form-control" v-model="item.identity" id="identity">
+                                                            <option v-for="identity in identities" :key="identity" :value="identity">
+                                                                {{ identity }}
+                                                            </option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -142,14 +143,18 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             <div class="col-md-12">
                                                 <div class="mb-4">
                                                     <label for="data_sms" class="form-label">Variables Detectadas del archivo <small>(Hacer click para seleccionar)</small> </label>
-
+                                                    <div class="d-flex gap-10">
+                                                        <div class="mb-3" v-for="(item, index) in customVariables" :key="index">
+                                                            <button class="badge bg-primary p-3 text-md border-0 b-radius-1"  @click.prevent="insertVariable(item)">{{ item }}</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-12">
                                                 <div class="mb-4">
                                                     <label for="message" class="form-label">Escriba el mensaje a enviar</label>
                                                     <textarea
-                                                            v-model="message"
+                                                            v-model="item.message"
                                                             id="message"
                                                             class="form-control"
                                                             @input="updateCharacterCount"></textarea>
@@ -230,13 +235,16 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 item: {
                     name: '',
                     phone: 0,
-                    identity: ''
+                    identity: '',
+                    message:''
                 },
                 characters:0,
                 characterCount:0,
-                isUploaded:true,
-                message:'',
+                isUploaded:false,
+                customVariables: [],
                 select_wallet:'',
+                phones:[],
+                identities: [],
                 wallet: '',
                 excelFile: null,
                 excelValidated: false,
@@ -249,8 +257,12 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
             },
             methods: {
+                insertVariable(variable) {
+                    this.item.message += `[${variable}] `;
+                    this.updateCharacterCount();
+                },
                 updateCharacterCount() {
-                    this.characterCount = this.message.length;
+                    this.characterCount = this.item.message.length;
                 },
                 async handleFileUpload(event){
                     const file = event.target.files[0];
@@ -266,7 +278,10 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             }
                         });
                         if(response.data.success){
-
+                            this.customVariables = response.data.headers
+                            this.phones = response.data.topRecords.map(record => record.FONO);
+                            this.identities = response.data.topRecords.map(record => record.IDENTIFICADOR);
+                            this.isUploaded = true;
                         }else{
                             toastr.warning(response.data.message)
                         }
@@ -274,6 +289,41 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         console.error("Error al enviar el archivo:", error);
                     }
                 },
+                async submitForm(){
+                    this.loading = true;
+
+                    try {
+                        const formData = new FormData();
+
+                        formData.append("name", this.campaign.name);
+                        formData.append("identity", this.campaign.date ?? null);
+                        formData.append("subject", this.campaign.subject);
+                        formData.append("sender", this.campaign.sender);
+                        formData.append("emailResponse", this.campaign.emailResponse);
+                        formData.append("unsubcribe", this.campaign.unsubcribe);
+
+                        formData.append("file", this.excelFile);
+
+                        const response = await axios.post("/includes/campaigns/insertCampaign", formData, {
+                            headers: { "Content-Type": "multipart/form-data" },
+                        });
+
+                        if (response.data.success) {
+                            toastr.success(response.data.message);
+                            window.location.href = "http://sinaptica-crm-dev.test/nuevo-email/seleccionar-plantilla?id="+campaignId;
+                        } else {
+                            toastr.error(response.data.message);
+                        }
+                    } catch (error) {
+                        if (error.response) {
+                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                        } else {
+                            toastr.error('Error de conexión con el servidor.');
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
+                }
             },
         });
     </script>

@@ -132,24 +132,40 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             <div class="panel">
                                 <div class="panel-body">
                                     <div class="row" v-if="selectedTemplate">
-                                        <div class="col-md-12 items-center">
-                                                <h4>Resumen de la Campaña</h4>
-                                            <div>
-                                                <p><strong>Nombre de la campaña:</strong> {{ campaign.name }}
-                                                </p>
-                                                <p><strong>Template seleccionado:</strong>
-                                                    {{ selectedTemplate.name }}</p>
-                                                <img :src="selectedTemplate.urlPreview" class="img-fluid mt-3"
-                                                     alt="Vista previa">
-                                            </div>
-                                            <button class="btn btn-primary my-4" @click="unselectTemplate">
+                                        <div class="col-md-9 text-center">
+                                            <h4>Resumen de la Campaña</h4>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-warning btn-block my-4"
+                                                    @click="unselectTemplate">
                                                 Cambiar Template
                                             </button>
                                         </div>
-                                        <div class="row">
-                                        //TODO: Mostrar la plantilla con la información del excel.
+                                        <div class="col-md-12">
+                                            <p><strong>Nombre de la campaña:</strong> {{ campaign.name }}</p>
+                                            <p><strong>Template seleccionado:</strong> {{ selectedTemplate.name }}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <select class="form-control" v-model="select_template" id="select_template">
+                                                <option value="" selected disabled>Seleccione los datos de prueba
+                                                </option>
+                                                <option v-for="data_email in data_emails" :key="data_email.identity"
+                                                        :value="data_email.id">
+                                                    {{ data_email.identity }} - {{ data_email.fullName }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button class="btn btn-info btn-block my-4" @click="fetchSelectTemplate">
+                                                Ver Plantilla
+                                            </button>
+                                        </div>
+                                        <div class="col-md-12" id="template_content">
+
                                         </div>
                                     </div>
+
                                     <div v-else>
                                         <!--                                    Cabecera-->
                                         <div class="d-flex justify-between items-baseline mb-3">
@@ -212,7 +228,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                                     </form>
                                                                     <form @submit.prevent="doubleTemplate(template.id)"
                                                                           class="m-0">
-                                                                        <button type="submit" class="btn btn-info btn-sm">
+                                                                        <button type="submit"
+                                                                                class="btn btn-info btn-sm">
                                                                             <i class="glyphicon glyphicon-duplicate"></i>
                                                                         </button>
                                                                     </form>
@@ -222,7 +239,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                                     </a>
                                                                     <form @submit="deleteTemplate(template.id, $event)"
                                                                           class="m-0">
-                                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                                        <button type="submit"
+                                                                                class="btn btn-danger btn-sm">
                                                                             <i class="glyphicon glyphicon-trash"></i>
                                                                         </button>
                                                                     </form>
@@ -242,7 +260,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                 </li>
                                                 <li class="page-item" v-for="page in totalPages" :key="page"
                                                     :class="{ active: currentPage === page }">
-                                                    <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page
+                                                    <a class="page-link" href="#"
+                                                       @click.prevent="changePage(page)">{{ page
                                                         }}</a>
                                                 </li>
                                                 <li class="page-item" :class="{ disabled: currentPage === totalPages }">
@@ -274,24 +293,24 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         </div>
                                         <!--                                    End modal-->
                                     </div>
-
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div><!-- page content --->
-            </div><!-- page container -->
-            <?php include '../layout/main-menu.php'; ?>
-        </div><!-- boxed -->
-        <footer id="footer">
-            <div class="show-fixed pull-right">
-                <ul class="footer-list list-inline">
+                </div>
+            </div><!-- page content --->
+        </div><!-- page container -->
+        <?php include '../layout/main-menu.php'; ?>
+    </div><!-- boxed -->
+    <footer id="footer">
+        <div class="show-fixed pull-right">
+            <ul class="footer-list list-inline">
 
-                </ul>
-            </div>
-        </footer>
-        <button id="scroll-top" class="btn"><i class="fa fa-chevron-up"></i></button>
-    </div>
+            </ul>
+        </div>
+    </footer>
+    <button id="scroll-top" class="btn"><i class="fa fa-chevron-up"></i></button>
+</div>
 </div>
 <script src="/js/jquery-2.2.1.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
@@ -306,6 +325,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 <script src="/js/extra/flatpickr.js"></script>
 <script src="/js/extra/toastr.min.js"></script>
 <script src="/js/extra/vuejs-paginate@latest.js"></script>
+<script src="https://editor.unlayer.com/embed.js"></script>
 <script>
     var app = new Vue({
         el: '#appConsultaTemplates',
@@ -320,6 +340,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 emailResponse: '',
                 unsubcribe: '',
             },
+            data_emails: [],
+            select_template: '',
+            json_content_template: '',
             templatesWithImages: [],
             selectedTemplate: null,
             customVariables: [],
@@ -337,6 +360,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             this.fetchCustomVariables(this.id);
             this.getTemplates();
             this.fetchCampaignData(this.id);
+            this.getTopDataEmails(this.id);
         },
         computed: {
             totalPages() {
@@ -354,7 +378,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 axios.get(`/includes/campaigns/getCampaign?id=${campaignId}`)
                     .then(response => {
                         this.campaign = response.data.item;
-                        if(this.campaign.template_id){
+                        if (this.campaign.template_id) {
                             axios.get(`/includes/templates/getTemplate?id=${this.campaign.template_id}`)
                                 .then(response => {
                                     this.selectedTemplate = response.data.item;
@@ -397,6 +421,100 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     .finally(() => {
                         this.loading = false;
                     });
+            },
+            getTopDataEmails(campaignId) {
+                this.loading = true;
+                axios.get(`/includes/templates/getTopDataEmails?id=${campaignId}`)
+                    .then(response => {
+                        if (Array.isArray(response.data.items)) {
+                            this.data_emails = response.data.items;
+                        } else {
+                            console.warn('La respuesta no es un arreglo:', response.data.items);
+                            this.data_emails = [];
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar campaña:', error);
+                        this.data_emails = [];
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            },
+            async fetchSelectTemplate() {
+                this.loading = true;
+                if (!this.select_template) {
+                    alert("Por favor seleccione un dato de prueba.");
+                    return;
+                }
+                const payload = {
+                    templateId: this.campaign.template_id,
+                    dataEmailId: this.select_template,
+                };
+                axios.post(`/includes/templates/selectTemplateToShow`, payload)
+                    .then((response) => {
+                        if (response.data.success) {
+                            this.json_content_template = response.data.processed_json;
+                            this.renderIframeFromJson(this.json_content_template);
+                        } else {
+                            toastr.warning(response.data.message || "No se pudo cargar la plantilla.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar datos:', error);
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            },
+            renderIframeFromJson(jsonData) {
+                const container = document.querySelector('#template_content');
+
+                container.innerHTML = '';
+
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '600px';
+                iframe.style.border = 'none';
+
+                const generatedHtml = this.generateHtmlFromJson(jsonData);
+
+                iframe.onload = () => {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    doc.open();
+                    doc.write(generatedHtml);
+                    doc.close();
+                };
+
+                container.appendChild(iframe);
+            },
+            generateHtmlFromJson(json) {
+                let html = `<div style="font-family: ${json.body.values.fontFamily.label}; color: ${json.body.values.textColor}; background-color: ${json.body.values.backgroundColor}; padding: 10px;">`;
+
+                json.body.rows.forEach(row => {
+                    html += '<div style="display: flex; margin-bottom: 10px;">';
+
+                    row.columns.forEach(column => {
+                        html += '<div style="flex: 1; padding: 5px;">';
+
+                        column.contents.forEach(content => {
+                            if (content.type === 'heading') {
+                                html += `<${content.values.headingType} style="font-size: ${content.values.fontSize}; text-align: ${content.values.textAlign}; line-height: ${content.values.lineHeight};">${content.values.text}</${content.values.headingType}>`;
+                            } else if (content.type === 'text') {
+                                html += `<p style="font-size: ${content.values.fontSize}; text-align: ${content.values.textAlign}; line-height: ${content.values.lineHeight};">${content.values.text}</p>`;
+                            } else if (content.type === 'button') {
+                                html += `<a href="${content.values.href.values.href}" target="${content.values.href.values.target}" style="display: inline-block; text-decoration: none; background-color: ${content.values.buttonColors.backgroundColor}; color: ${content.values.buttonColors.color}; padding: ${content.values.padding}; border-radius: ${content.values.borderRadius}; font-size: ${content.values.fontSize}; line-height: ${content.values.lineHeight}; text-align: ${content.values.textAlign};">${content.values.text}</a>`;
+                            }
+                        });
+
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+                return html;
             },
             searchTemplates() {
                 this.currentPage = 1;
@@ -445,7 +563,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         if (response.data.success) {
                             toastr.success(response.data.message);
                             this.selectedTemplate = response.data.item;
-
                         } else {
                             toastr.warning(response.data.message);
                         }
@@ -518,8 +635,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             unselectTemplate() {
                 axios.get(`/includes/templates/unselectTemplate?id=${this.campaign.id}`)
                     .then(response => {
-                        if(response.data.success){
+                        if (response.data.success) {
                             this.selectedTemplate = null;
+                            this.select_template = null;
                         }
                     })
                     .catch(error => {

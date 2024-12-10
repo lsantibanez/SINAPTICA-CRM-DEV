@@ -304,10 +304,9 @@ class Campaign
             WHERE mc.id = " . intval($id) . "
             LIMIT 1";
 
-            $this->logs->debug($sql);
+
 
             $result = $this->db->select($sql);
-            $this->logs->debug($result);
             if (!$result || count($result) === 0) {
                 $this->logs->error("No se encontró información para la campaña con id: " . $id);
                 return [
