@@ -91,7 +91,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                 <div class="mb-4">
                                                     <label for="file" class="form-label">Seleccione archivo de
                                                         carga</label>
-                                                    <input type="file" class="form-control" @change="handleFileUpload" v-model="excelFile"
+                                                    <input type="file" class="form-control" @change="handleFileUpload"
                                                            id="file" accept=".xlsx,.xls"/>
                                                 </div>
                                             </div>
@@ -99,8 +99,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             <div class="col-md-12 p-0" v-if="isUploaded">
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="phone" class="form-label">Seleccione columna teléfono del archivo</label>
+                                                        <label for="phone" class="form-label">Seleccione columna
+                                                            teléfono del archivo</label>
                                                         <select class="form-control" v-model="item.phone" id="phone">
+                                                            <option value="" disabled selected>Seleccione una opción
+                                                            </option>
                                                             <option v-for="phone in phones" :key="phone" :value="phone">
                                                                 {{ phone }}
                                                             </option>
@@ -110,9 +113,14 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="identity" class="form-label">Seleccione Documento o DNI. Opcional *</label>
-                                                        <select class="form-control" v-model="item.identity" id="identity">
-                                                            <option v-for="identity in identities" :key="identity" :value="identity">
+                                                        <label for="identity" class="form-label">Seleccione Documento o
+                                                            DNI. Opcional *</label>
+                                                        <select class="form-control" v-model="item.identity"
+                                                                id="identity">
+                                                            <option value="" disabled selected>Seleccione una opción
+                                                            </option>
+                                                            <option v-for="identity in identities" :key="identity"
+                                                                    :value="identity">
                                                                 {{ identity }}
                                                             </option>
                                                         </select>
@@ -121,20 +129,27 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="select_wallet" class="form-label">Seleccione cartera a
+                                                        <label for="select_wallet" class="form-label">Seleccione cartera
+                                                            a
                                                             Asignar (Opcional)</label>
-                                                        <select class="form-control" v-model="select_wallet" id="select_wallet">
-                                                            <option>Test</option>
+                                                        <select class="form-control" v-model="select_wallet"
+                                                                id="select_wallet">
+                                                            <option value="" disabled selected>Seleccione una opción
+                                                            </option>
                                                         </select>
                                                     </div>
                                                 </div>
 
                                                 <div class="col-md-6">
                                                     <div class="mb-4">
-                                                        <label for="wallet" class="form-label">Crear nueva Cartera</label>
+                                                        <label for="wallet" class="form-label">Crear nueva
+                                                            Cartera</label>
                                                         <div class="d-flex gap-10">
-                                                            <input type="text" class="form-control" v-model="wallet" id="wallet"  />
-                                                            <button type="button" class="btn btn-primary">Guardar Cartera</button>
+                                                            <input type="text" class="form-control" v-model="wallet"
+                                                                   id="wallet"/>
+                                                            <button type="button" class="btn btn-primary">Guardar
+                                                                Cartera
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -142,17 +157,22 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             </div>
                                             <div class="col-md-12">
                                                 <div class="mb-4">
-                                                    <label for="data_sms" class="form-label">Variables Detectadas del archivo <small>(Hacer click para seleccionar)</small> </label>
+                                                    <label for="data_sms" class="form-label">Variables Detectadas del
+                                                        archivo <small>(Hacer click para seleccionar)</small> </label>
                                                     <div class="d-flex gap-10">
-                                                        <div class="mb-3" v-for="(item, index) in customVariables" :key="index">
-                                                            <button class="badge bg-primary p-3 text-md border-0 b-radius-1"  @click.prevent="insertVariable(item)">{{ item }}</button>
+                                                        <div class="mb-3" v-for="(item, index) in customVariables"
+                                                             :key="index">
+                                                            <button class="badge bg-primary p-3 text-md border-0 b-radius-1"
+                                                                    @click.prevent="insertVariable(item)">{{ item }}
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-12">
                                                 <div class="mb-4">
-                                                    <label for="message" class="form-label">Escriba el mensaje a enviar</label>
+                                                    <label for="message" class="form-label">Escriba el mensaje a
+                                                        enviar</label>
                                                     <textarea
                                                             v-model="item.message"
                                                             id="message"
@@ -165,36 +185,35 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         </div>
 
                                         <div class="d-flex justify-content-between align-items-center my-4 gap-10">
-                                            <button class="btn btn-primary">
-                                                Guardar Campaña
+                                            <button :disabled="loading" class="btn btn-primary">
+                                                <span v-if="!loading">Guardar Campaña</span>
+                                                <span v-else>Cargando...</span>
                                             </button>
                                             <span v-if="loading" class="spinner-border spinner-border-sm text-primary"
                                                   role="status"></span>
-                                            <button class="btn btn-warning">Limpiar</button>
+                                            <button @click="clearMessage" class="btn btn-warning">Limpiar</button>
                                         </div>
                                     </form>
 
-                                    <div class="col-md-12">
-                                        <span class="form-label">Preview</span>
-                                        <table class="table">
-                                            <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Name</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td>132</td>
-                                                <td>Test</td>
-                                            </tr>
-                                            <tr>
-                                                <td>1332</td>
-                                                <td>Test 2</td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <div v-if="isPreview" class="col-md-12">
+                                    <span class="form-label">Preview</span>
+                                    <table class="table">
+                                        <thead>
+                                        <tr>
+                                            <th v-for="(header, index) in tableHeaders" :key="index">{{ header }}</th>
+                                            <th>Mensaje</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
+                                            <td v-for="(header, colIndex) in tableHeaders" :key="colIndex">
+                                                {{ row[header] }}
+                                            </td>
+                                            <td>{{ row.updatedMessage }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -236,27 +255,35 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     name: '',
                     phone: 0,
                     identity: '',
-                    message:''
+                    message: ''
                 },
-                characters:0,
-                characterCount:0,
-                isUploaded:false,
+                characters: 0,
+                characterCount: 0,
+                isUploaded: false,
                 customVariables: [],
-                select_wallet:'',
-                phones:[],
+                select_wallet: '',
+                phones: [],
                 identities: [],
                 wallet: '',
                 excelFile: null,
                 excelValidated: false,
                 excelPreview: [],
+                tableHeaders: [],
+                tableData: [],
+                isPreview: false,
                 loading: false,
             },
             mounted() {
             },
-            computed: {
-
-            },
+            computed: {},
             methods: {
+                clearMessage() {
+                    const confirmed = window.confirm("¿Estás seguro de que deseas limpiar el mensaje?");
+
+                    if (confirmed) {
+                        this.item.message = '';
+                    }
+                },
                 insertVariable(variable) {
                     this.item.message += `[${variable}] `;
                     this.updateCharacterCount();
@@ -264,12 +291,18 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 updateCharacterCount() {
                     this.characterCount = this.item.message.length;
                 },
-                async handleFileUpload(event){
-                    const file = event.target.files[0];
-                    if (!file) return;
+                async handleFileUpload(event) {
+                    this.loading = true;
+                    this.excelFile = event.target.files[0];
+
+                    if (!this.excelFile) {
+                        toastr.warning("No se seleccionó ningún archivo.");
+                        this.loading = false;
+                        return;
+                    }
 
                     const formData = new FormData();
-                    formData.append("file", file);
+                    formData.append("file", this.excelFile);
 
                     try {
                         const response = await axios.post('/includes/sms/verifyExcel', formData, {
@@ -277,40 +310,58 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                 'Content-Type': 'multipart/form-data'
                             }
                         });
-                        if(response.data.success){
-                            this.customVariables = response.data.headers
-                            this.phones = response.data.topRecords.map(record => record.FONO);
-                            this.identities = response.data.topRecords.map(record => record.IDENTIFICADOR);
+
+                        if (response.data.success) {
+                            this.customVariables = response.data.headers;
+                            this.phones = response.data.headers;
+                            this.identities = response.data.headers;
                             this.isUploaded = true;
-                        }else{
-                            toastr.warning(response.data.message)
+                            toastr.success("Archivo procesado correctamente.");
+                        } else {
+                            toastr.warning(response.data.message);
                         }
                     } catch (error) {
                         console.error("Error al enviar el archivo:", error);
+                        toastr.error("Error al procesar el archivo.");
+                    } finally {
+                        this.loading = false;
                     }
                 },
-                async submitForm(){
+                async submitForm() {
                     this.loading = true;
 
                     try {
                         const formData = new FormData();
 
-                        formData.append("name", this.campaign.name);
-                        formData.append("identity", this.campaign.date ?? null);
-                        formData.append("subject", this.campaign.subject);
-                        formData.append("sender", this.campaign.sender);
-                        formData.append("emailResponse", this.campaign.emailResponse);
-                        formData.append("unsubcribe", this.campaign.unsubcribe);
-
+                        formData.append("name", this.item.name);
+                        formData.append("phone", this.item.phone ?? null);
+                        formData.append("identity", this.item.identity);
+                        formData.append("message", this.item.message);
                         formData.append("file", this.excelFile);
 
-                        const response = await axios.post("/includes/campaigns/insertCampaign", formData, {
-                            headers: { "Content-Type": "multipart/form-data" },
+                        const response = await axios.post("/includes/sms/insertSms", formData, {
+                            headers: {"Content-Type": "multipart/form-data"},
                         });
+
+                        console.log(response.data);
 
                         if (response.data.success) {
                             toastr.success(response.data.message);
-                            window.location.href = "http://sinaptica-crm-dev.test/nuevo-email/seleccionar-plantilla?id="+campaignId;
+
+                            const previewData = response.data.previewData;
+
+                            const firstItem = previewData[0];
+                            const customVariables = JSON.parse(firstItem.customVariables);
+                            this.tableHeaders = Object.keys(customVariables);
+
+                            this.tableData = previewData.map(item => {
+                                const customVariables = JSON.parse(item.customVariables);
+                                return {
+                                    ...customVariables,
+                                    updatedMessage: item.updatedMessage
+                                };
+                            });
+                            this.isPreview = true;
                         } else {
                             toastr.error(response.data.message);
                         }

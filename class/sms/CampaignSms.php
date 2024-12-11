@@ -104,9 +104,111 @@ class CampaignSms
         }
     }
 
-    function insert($rerquest)
+    function insert($request)
     {
-        return $rerquest;
+        $requiredFields = ['name', 'phone', 'identity', 'message', 'file'];
+        foreach ($requiredFields as $field) {
+            if (empty($request[$field])) {
+                return ['success' => false, 'message' => "El campo $field es obligatorio."];
+            }
+        }
+
+        $file = $request['file'];
+        if (empty($_FILES['file'])) {
+            echo json_encode(['success' => false, 'message' => 'El archivo no se envió correctamente.']);
+            exit;
+        }
+
+        $allowedExtensions = ['xls', 'xlsx'];
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        if (!in_array($extension, $allowedExtensions)) {
+            return ['success' => false, 'message' => 'El archivo debe ser un Excel con extensión .xls o .xlsx.'];
+        }
+
+        try {
+            $tempPath = $file['tmp_name'];
+            $reader = IOFactory::createReaderForFile($tempPath);
+            $spreadsheet = $reader->load($tempPath);
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $highestColumn = $sheet->getHighestColumn();
+            $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
+            $fileHeaders = array_map('strtoupper', $headers);
+
+            $requiredHeaders = [$request['phone'], $request['identity']];
+            foreach ($requiredHeaders as $header) {
+                if (!in_array($header, $fileHeaders)) {
+                    return ['success' => false, 'message' => 'El archivo no contiene las cabeceras requeridas: EMAIL, NOMBRE, IDENTIFICADOR.'];
+                }
+            }
+
+            $campaignData = [
+                'name' => $request['name'],
+                'identity' => $request['identity'],
+                'phone' => $request['phone'],
+                'preview' => $request['message'],
+                'status' => 'CARGADO',
+                'created_at' => date('Y-m-d H:i:s'),
+                'idCedente' => $this->idCedente,
+                'idMandante' => $this->idMandante
+            ];
+            $campaignId = $this->db->insertWithParams('msj_campaign_sms', $campaignData);
+
+            if (!$campaignId) {
+                return ['success' => false, 'message' => 'Error al insertar la campaña.'];
+            }
+
+            $rows = $sheet->rangeToArray("A2:{$highestColumn}" . $sheet->getHighestRow());
+            $previewData = [];
+
+            foreach (array_chunk($rows, 1000) as $chunk) {
+                foreach ($chunk as $index => $row) {
+                    $row = array_combine($fileHeaders, array_map('trim', $row));
+                    $customVariables = json_encode($row);
+
+                    $messageTemplate = $request['message'];
+                    $message = preg_replace_callback('/\[(\w+)\]/', function ($matches) use ($row) {
+                        $key = strtoupper($matches[1]);
+                        return $row[$key] ?? $matches[0];
+                    }, $messageTemplate);
+
+                    $quantity = strlen($message);
+
+                    $specialCharacters = preg_match('/[^\x20-\x7E]/', $message) ? 1 : 0;
+
+                    if (count($previewData) < 5) {
+                        $previewData[] = [
+                            'customVariables' => $customVariables,
+                            'updatedMessage' => $message
+                        ];
+                    }
+
+                    $smsData = [
+                        'identity' => $row[$request['identity']],
+                        'phone' => $row[$request['phone']],
+                        'customVariables' => $customVariables,
+                        'campaign_sms_id' => $campaignId,
+                        'message' => $message,
+                        'quantity' => $quantity,
+                        'special_characters' => $specialCharacters,
+                        'status' => 'CARGADO',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ];
+                    $this->db->insertWithParams('msj_data_sms', $smsData);
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Campaña creada y datos almacenados exitosamente.',
+                'campaignId' => $campaignId,
+                'previewData' => $previewData
+            ];
+
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al procesar la campaña: ' . $e->getMessage()];
+        }
     }
 
 

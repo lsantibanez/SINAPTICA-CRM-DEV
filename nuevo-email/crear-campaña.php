@@ -114,7 +114,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             <div class="panel">
                                 <div class="panel-body">
                                     <h4>Crear Campañas</h4>
-                                    <form @submit.prevent="submitForm">
+                                    <form @submit.prevent="submitForm" novalidate>
                                         <div class="row">
 
                                             <div class="col-md-8">
@@ -148,6 +148,13 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                 </div>
                                             </div>
 
+                                            <div class="col-md-12">
+                                                <div class="mb-4">
+                                                    <label for="excelFile" class="form-label">Carga de archivos base (Excel):</label>
+                                                    <input type="file" id="excelFile" class="form-control" @change="handleFileUpload" accept=".xls,.xlsx" />
+                                                </div>
+                                            </div>
+
                                             <div class="col-md-6">
                                                 <div class="mb-4">
                                                     <label for="sender" class="form-label">Nombre remitente:</label>
@@ -173,20 +180,20 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                                         </div>
 
-                                        <div class="d-flex justify-content-between align-items-center my-4">
-                                            <button v-if="loading" class="btn btn-primary">
-                                                Guardar Campaña
+                                        <div class="d-flex justify-content-between align-items-center my-4 gap-10">
+                                            <button :disabled="loading"  class="btn btn-primary">
+                                                {{!loading ? 'Guardar Campaña' : 'Cargando...'}}
                                             </button>
-                                            <span v-if="loading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                            <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
                                             <a class="btn btn-warning" href="/nuevo-email/campaña">Regresar</a>
                                         </div>
-                                    </form>
-                                    <div class="col-md-12">
-                                        <div class="mb-4" id="dropzone-container">
-                                            <label for="file" class="form-label">Carga de archivos base (Excel):</label>
-                                            <form action="/target" class="dropzone" id="my-dropzone"></form>
+
+                                        <div v-if="loading" class="text-center mt-5">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </form>
 
                                 </div>
                             </div>
@@ -219,7 +226,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <script src="/js/extra/toastr.min.js"></script>
     <script src="/js/extra/vuejs-paginate@latest.js"></script>
     <script src="/js/extra/html2canvas.min.js"></script>
-    <script src="/js/extra/dropzone.min.js"></script>
     <script>
         var app = new Vue({
             el: '#appConsultaTemplates',
@@ -227,7 +233,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 programmed : 0,
                 campaign: {
                     name: '',
-                    date: 0,
+                    date: '',
                     subject: '',
                     sender: '',
                     emailResponse: '',
@@ -239,32 +245,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 loading: false,
             },
             mounted() {
-                const self = this;
-                if (Dropzone.instances.length > 0) {
-                    Dropzone.instances.forEach(instance => instance.destroy());
-                }
-
-                this.dropzone = new Dropzone("#my-dropzone", {
-                    url: "/api/dummy-endpoint",
-                    autoProcessQueue: false,
-                    paramName: "file",
-                    acceptedFiles: ".xls,.xlsx",
-                    dictDefaultMessage: "Arrastra un archivo Excel aquí para cargarlo",
-                    addRemoveLinks: true,
-                    dictRemoveFile: "",
-                    init: function () {
-                        this.on("addedfile", function (file) {
-                            self.excelFile = file;
-                            self.validateExcel(file, this);
-                        });
-
-                        this.on("removedfile", function () {
-                            self.excelFile = null;
-                            self.excelValidated = false;
-                            self.excelPreview = [];
-                        });
-                    },
-                });
             },
             computed: {
                 minDateTime() {
@@ -279,8 +259,18 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 },
             },
             methods: {
-
-                async validateExcel(file, dropzone) {
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.excelFile = file;
+                        this.validateExcel(file);
+                    } else {
+                        this.excelFile = null;
+                        this.excelValidated = false;
+                        this.excelPreview = [];
+                    }
+                },
+                async validateExcel(file) {
                     this.loading = true;
 
                     const formData = new FormData();
@@ -294,34 +284,19 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         if (response.data.success) {
                             this.excelValidated = true;
                             this.excelPreview = response.data.preview;
-
-                            const filePreviewElement = file.previewElement;
-                            const successIcon = document.createElement("div");
-                            successIcon.classList.add("dz-success-custom");
-                            filePreviewElement.appendChild(successIcon);
-
                             toastr.success(response.data.message);
                         } else {
-                            this.handleInvalidFile(file, dropzone, response.data.message);
+                            this.excelValidated = false;
+                            this.excelPreview = [];
+                            toastr.warning(response.data.message || "Archivo no válido");
                         }
                     } catch (error) {
-                        this.handleInvalidFile(file, dropzone, 'Ocurrió un error al procesar la solicitud.');
+                        this.excelValidated = false;
+                        this.excelPreview = [];
+                        toastr.warning("Ocurrió un error al procesar la solicitud.");
                     } finally {
                         this.loading = false;
                     }
-                },
-                handleInvalidFile(file, dropzone, message) {
-                    this.excelValidated = false;
-                    this.excelPreview = [];
-
-                    const filePreviewElement = file.previewElement;
-                    const errorIcon = document.createElement("div");
-                    errorIcon.classList.add("dz-error-custom");
-                    filePreviewElement.appendChild(errorIcon);
-
-                    dropzone.removeFile(file);
-
-                    toastr.warning(message || "Archivo no válido");
                 },
                 async submitForm() {
                     if (!this.excelFile) {
@@ -345,7 +320,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         formData.append("sender", this.campaign.sender);
                         formData.append("emailResponse", this.campaign.emailResponse);
                         formData.append("unsubcribe", this.campaign.unsubcribe);
-
                         formData.append("file", this.excelFile);
 
                         const response = await axios.post("/includes/campaigns/insertCampaign", formData, {
@@ -354,7 +328,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                         if (response.data.success) {
                             toastr.success(response.data.message);
-                            window.location.href = "http://sinaptica-crm-dev.test/nuevo-email/seleccionar-plantilla?id="+campaignId;
+                            window.location.href = "http://sinaptica-crm-dev.test/nuevo-email/seleccionar-plantilla?id="+response.data.campaignId;
                         } else {
                             toastr.error(response.data.message);
                         }

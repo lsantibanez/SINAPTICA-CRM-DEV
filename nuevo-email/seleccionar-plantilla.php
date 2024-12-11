@@ -448,7 +448,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     return;
                 }
                 const payload = {
-                    templateId: this.campaign.template_id,
+                    templateId: this.campaign.template_id !== null ? this.campaign.template_id : this.selectedTemplate.id,
                     dataEmailId: this.select_template,
                 };
                 axios.post(`/includes/templates/selectTemplateToShow`, payload)

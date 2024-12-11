@@ -1,11 +1,23 @@
 <?php
 include_once("../../class/sms/CampaignSms.php");
 
-$sms = new CampaignSms();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-$request = json_decode(file_get_contents('php://input'), true);
+    $request = [
+        'name' => $_POST['name'] ?? null,
+        'phone' => $_POST['phone'] ?? null,
+        'identity' => $_POST['identity'] ?? null,
+        'message' => $_POST['message'] ?? null,
+        'file' => $_FILES['file'] ?? null
+    ];
 
-$response = $sms->insert($request);
+    $sms = new CampaignSms();
 
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode($response);
+    $response = $sms->insert($request);
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+} else {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+}

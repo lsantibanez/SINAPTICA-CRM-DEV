@@ -423,18 +423,15 @@ class Template {
 
         if($campaign[0]['template_id'] == $id) return ['success' => false, 'message' => 'Esta plantilla ya ha sido seleccionada'];
 
-        $sql = "";
 
         $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
         $template = $this->db->select($sql);
         if(!$template) return ['success' => false, 'message' => 'No se encontró la plantilla con el id '.$id];
 
-        $sql = "";
 
         $sql = "SELECT * FROM mail_data_emails WHERE campaign_id=".$campaignId. " LIMIT 1" ;
         $data_email = $this->db->select($sql);
 
-        $sql = "";
 
         $campaignVariables = [];
         if ($data_email && isset($data_email[0]['customVariables'])){
