@@ -8,13 +8,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $data = json_decode(file_get_contents('php://input'), true);
 
-    $templateId = (int)$data['templateId'] ?? null;
-    $data_email_id = (int)$data['dataEmailId'] ?? null;
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo json_encode(['success' => false, 'message' => 'Error en la decodificación del JSON']);
+        exit;
+    }
 
-    $template = new Template();
-    $response = $template->asignCustomVariablesTemplate($templateId,$data_email_id);
+    $dataEmail = $data['dataEmail'] ?? null;
+    $template = $data['template'] ?? null;
 
-    echo json_encode($response);
-}else {
-    echo json_encode(['success' => false, 'message' => 'Método no soportado,Solo POST']);
+    if ($dataEmail && $template) {
+        $templateObj = new Template();
+        $response = $templateObj->asignCustomVariablesTemplate($template, $dataEmail);
+        echo json_encode($response);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Faltan parámetros en el payload']);
+    }
+
+} else {
+    echo json_encode(['success' => false, 'message' => 'Método no soportado, solo POST']);
 }

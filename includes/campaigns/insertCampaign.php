@@ -9,8 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request = [
         'name' => $_POST['name'] ?? null,
         'date' => $_POST['date'] ?? null,
+        'programmed' => $_POST['programmed'] ?? null,
         'subject' => $_POST['subject'] ?? null,
         'sender' => $_POST['sender'] ?? null,
+        'template_id' => $_POST['template_id'] ?? null,
         'emailResponse' => $_POST['emailResponse'] ?? null,
         'file' => $_FILES['file'] ?? null
     ];

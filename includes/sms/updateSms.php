@@ -4,6 +4,7 @@ include_once("../../class/sms/CampaignSms.php");
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $request = [
+        'id' => $_POST['id'] ?? null,
         'name' => $_POST['name'] ?? null,
         'phone' => $_POST['phone'] ?? null,
         'identity' => $_POST['identity'] ?? null,

@@ -415,27 +415,15 @@ class Template {
         }
     }
 
-    function selectTemplate($id,$campaignId){
-
-        $sql = "SELECT * FROM mail_campaigns WHERE id = ".$campaignId;
-        $campaign = $this->db->select($sql);
-        if(!$campaign) return ['success' => false, 'message' => 'No se encontró la campaña con el id '.$campaignId];
-
-        if($campaign[0]['template_id'] == $id) return ['success' => false, 'message' => 'Esta plantilla ya ha sido seleccionada'];
-
+    function selectTemplate($id,$preview){
 
         $sql = "SELECT * FROM mail_templates WHERE id = ".$id;
         $template = $this->db->select($sql);
         if(!$template) return ['success' => false, 'message' => 'No se encontró la plantilla con el id '.$id];
 
-
-        $sql = "SELECT * FROM mail_data_emails WHERE campaign_id=".$campaignId. " LIMIT 1" ;
-        $data_email = $this->db->select($sql);
-
-
         $campaignVariables = [];
-        if ($data_email && isset($data_email[0]['customVariables'])){
-            $decodedVariables = json_decode($data_email[0]['customVariables'], true);
+        if ($preview && isset($preview)) {
+            $decodedVariables = is_string($preview) ? json_decode($preview, true) : $preview;
 
             if (is_array($decodedVariables)) {
                 $campaignVariables = array_keys(array_change_key_case($decodedVariables, CASE_UPPER));
@@ -463,19 +451,11 @@ class Template {
 
 
         try {
-           $sql = "UPDATE  mail_campaigns
-                   SET template_id= ".$id.
-                  " WHERE id= ".$campaignId;
-
-           $this->db->query($sql);
            return ['success' => true,'message' => 'Se ha seleccionado la plantilla correctamente.','item' => $template[0]];
         }catch (Exception $e) {
             $this->logs->error($e->getMessage());
             return ['success' => false, 'items' => []];
         }
-
-
-
     }
     function unselectTemplate($id){
         try {
@@ -495,32 +475,24 @@ class Template {
         return ['success' => true,'items'=> $mail_data];
     }
 
-    function asignCustomVariablesTemplate($templateId, $mail_data_email_id) {
+    function asignCustomVariablesTemplate($templateContent, $mailDataEmail) {
         try {
-            $sql = "SELECT json_content FROM mail_templates WHERE id = " . $templateId;
-            $template = $this->db->select($sql);
-            if (empty($template)) {
-                $this->logs->error('Plantilla no encontrada con el id: ' . $templateId);
-                return ['success' => false, 'processed_json' => null];
+            if (is_string($templateContent)) {
+                $templateContent = json_decode($templateContent, true);
             }
-            $sql = "SELECT customVariables FROM mail_data_emails WHERE id = " . $mail_data_email_id . " LIMIT 1";
-            $data_email = $this->db->select($sql);
-            if (empty($data_email)) {
-                $this->logs->error('No se encontró el registro en la tabla mail_data_emails con el id: ' . $mail_data_email_id);
-                return ['success' => false, 'processed_json' => null];
-            }
-            $jsonContent = json_decode($template[0]['json_content'], true);
-            if (!is_array($jsonContent)) {
+
+            if (!is_array($templateContent)) {
                 $this->logs->error('El contenido JSON de la plantilla no es válido.');
                 return ['success' => false, 'processed_json' => null];
             }
-            $customVariables = json_decode($data_email[0]['customVariables'], true);
+
+            $customVariables = $mailDataEmail;
             if (!is_array($customVariables)) {
-                $this->logs->error('No hay custom variables válidas en este registro de la tabla mail_data_emails.');
+                $this->logs->error('El objeto dataEmail no contiene variables válidas.');
                 return ['success' => false, 'processed_json' => null];
             }
 
-            array_walk_recursive($jsonContent, function (&$value) use ($customVariables) {
+            array_walk_recursive($templateContent, function (&$value) use ($customVariables) {
                 if (is_string($value)) {
                     preg_match_all('/\|\|([A-Z_]+)\|\|/', $value, $matches);
                     foreach ($matches[1] as $var) {
@@ -530,7 +502,7 @@ class Template {
                 }
             });
 
-            return ['success' => true, 'processed_json' => $jsonContent];
+            return ['success' => true, 'processed_json' => $templateContent];
 
         } catch (Exception $e) {
             $this->logs->error($e->getMessage());

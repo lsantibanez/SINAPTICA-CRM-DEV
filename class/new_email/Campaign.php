@@ -88,13 +88,13 @@ class Campaign
             $requiredHeaders = ['EMAIL', 'NOMBRE', 'IDENTIFICADOR'];
             $fileHeaders = array_map('strtoupper', $headers);
 
-            foreach ($requiredHeaders as $header) {
-                if (!in_array($header, $fileHeaders)) {
-                    return [
-                        'success' => false,
-                        'message' => 'El archivo no contiene las cabeceras requeridas: EMAIL, NOMBRE, IDENTIFICADOR.',
-                    ];
-                }
+            $missingHeaders = array_diff($requiredHeaders, $fileHeaders);
+            if (!empty($missingHeaders)) {
+                return [
+                    'success' => false,
+                    'message' => 'El archivo no contiene las cabeceras requeridas: ' . implode(', ', $missingHeaders),
+                    'headers' => $fileHeaders,
+                ];
             }
 
             $rows = $sheet->rangeToArray("A2:{$highestColumn}11");
@@ -104,7 +104,7 @@ class Campaign
                 $preview[] = array_combine($fileHeaders, $row);
             }
 
-            return ['success' => true, 'message' => 'El archivo es válido.', 'preview' => $preview];
+            return ['success' => true, 'message' => 'El archivo es válido.', 'preview' => $preview, 'foundHeaders' => $fileHeaders,];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Error al procesar el archivo: ' . $e->getMessage()];
         }
@@ -113,7 +113,7 @@ class Campaign
 
     function insert($request)
     {
-        $requiredFields = ['name', 'subject', 'sender', 'emailResponse', 'file'];
+        $requiredFields = ['name', 'subject', 'sender', 'template_id', 'emailResponse', 'file'];
         foreach ($requiredFields as $field) {
             if (empty($request[$field])) {
                 return ['success' => false, 'message' => "El campo $field es obligatorio."];
@@ -154,17 +154,22 @@ class Campaign
 
             $campaignData = [
                 'name' => $request['name'],
-                'date' => $request['date'] ?? null,
                 'subject' => $request['subject'],
                 'schedule' => 0,
                 'emailResponse' => $request['emailResponse'],
                 'sender' => $request['sender'],
+                'template_id' => $request['template_id'],
                 'status' => 'CARGADA',
                 'unsubcribe' => $request['unsubcribe'] ?? null,
                 'created_at' => date('Y-m-d H:i:s'),
                 'idCedente' => $this->idCedente,
                 'idMandante' => $this->idMandante
             ];
+
+            if($request['programmed'] === 0){
+                $campaignData['date'] = $request['date'];
+            }
+
             $campaignId = $this->db->insertWithParams('mail_campaigns', $campaignData);
 
             if (!$campaignId) {
@@ -197,7 +202,8 @@ class Campaign
         }
     }
 
-    function update($request){
+    function update($request)
+    {
         $requiredFields = ['name', 'subject', 'sender', 'emailResponse'];
         foreach ($requiredFields as $field) {
             if (empty($request[$field])) {
@@ -209,36 +215,36 @@ class Campaign
             return ['success' => false, 'message' => 'El campo Correo de respuesta debe ser un email válido.'];
         }
 
-       if(!empty($request['file'])){
-           $file = $request['file'];
-           if (!isset($file) || $file['error'] !== 0) {
-               return ['success' => false, 'message' => 'No se cargó un archivo o hubo un error al cargarlo.'];
-           }
+        if (!empty($request['file'])) {
+            $file = $request['file'];
+            if (!isset($file) || $file['error'] !== 0) {
+                return ['success' => false, 'message' => 'No se cargó un archivo o hubo un error al cargarlo.'];
+            }
 
-           $allowedExtensions = ['xls', 'xlsx'];
-           $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-           if (!in_array($extension, $allowedExtensions)) {
-               return ['success' => false, 'message' => 'El archivo debe ser un Excel con extensión .xls o .xlsx.'];
-           }
-       }
+            $allowedExtensions = ['xls', 'xlsx'];
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (!in_array($extension, $allowedExtensions)) {
+                return ['success' => false, 'message' => 'El archivo debe ser un Excel con extensión .xls o .xlsx.'];
+            }
+        }
 
         try {
-            if(!empty($request['file'])){
-            $tempPath = $file['tmp_name'];
-            $reader = IOFactory::createReaderForFile($tempPath);
-            $spreadsheet = $reader->load($tempPath);
-            $sheet = $spreadsheet->getActiveSheet();
+            if (!empty($request['file'])) {
+                $tempPath = $file['tmp_name'];
+                $reader = IOFactory::createReaderForFile($tempPath);
+                $spreadsheet = $reader->load($tempPath);
+                $sheet = $spreadsheet->getActiveSheet();
 
-            $highestColumn = $sheet->getHighestColumn();
-            $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
-            $fileHeaders = array_map('strtoupper', $headers);
+                $highestColumn = $sheet->getHighestColumn();
+                $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
+                $fileHeaders = array_map('strtoupper', $headers);
 
-            $requiredHeaders = ['EMAIL', 'NOMBRE', 'IDENTIFICADOR'];
-            foreach ($requiredHeaders as $header) {
-                if (!in_array($header, $fileHeaders)) {
-                    return ['success' => false, 'message' => 'El archivo no contiene las cabeceras requeridas: EMAIL, NOMBRE, IDENTIFICADOR.'];
+                $requiredHeaders = ['EMAIL', 'NOMBRE', 'IDENTIFICADOR'];
+                foreach ($requiredHeaders as $header) {
+                    if (!in_array($header, $fileHeaders)) {
+                        return ['success' => false, 'message' => 'El archivo no contiene las cabeceras requeridas: EMAIL, NOMBRE, IDENTIFICADOR.'];
+                    }
                 }
-            }
             }
 
             $campaignData = [
@@ -256,14 +262,14 @@ class Campaign
             $conditions = [
                 'id' => $request['id']
             ];
-            $campaignId = $this->db->updateWithParams('mail_campaigns', $campaignData,$conditions);
+            $campaignId = $this->db->updateWithParams('mail_campaigns', $campaignData, $conditions);
 
             if (!$campaignId) {
                 return ['success' => false, 'message' => 'Error al insertar la campaña.'];
             }
 
-            if(!empty($request['file'])){
-                $sql = "DELETE FROM mail_data_emails WHERE campaig_id= ".$request['id'];
+            if (!empty($request['file'])) {
+                $sql = "DELETE FROM mail_data_emails WHERE campaig_id= " . $request['id'];
                 $this->db->query($sql);
 
                 $rows = $sheet->rangeToArray("A2:{$highestColumn}" . $sheet->getHighestRow());
@@ -289,8 +295,42 @@ class Campaign
 
             return ['success' => true, 'message' => 'Campaña actualizada y datos almacenados exitosamente.'];
         } catch (\Exception $e) {
-           $this->logs->error($e->getMessage());
+            $this->logs->error($e->getMessage());
             return ['success' => false, 'message' => 'Error al procesar la campaña: ' . $e->getMessage()];
+        }
+    }
+
+    function delete($id){
+        $sql = "SELECT * FROM mail_campaigns WHERE id = ".$id;
+        $template = $this->db->select($sql);
+
+        if (!$template) {
+            $this->logs->error("No se encontró la plantilla por el id: " . $id);
+            return [
+                'success' => false,
+                'message' => 'No se encontró la plantilla',
+            ];
+        }
+        try {
+
+            $sqlDelete = "UPDATE mail_campaigns 
+                      SET isDeleted = 1, deleted_at = NOW()
+                      WHERE id = " . intval($id);
+
+            $this->db->query($sqlDelete);
+
+            return [
+                'success' => true,
+                'message' => 'Campaña eliminada correctamente',
+            ];
+
+        }catch (Exception $e) {
+            $this->logs->error($e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Ocurrió un error al clonar la plantilla',
+                'error' => $e->getMessage(),
+            ];
         }
     }
 
@@ -303,7 +343,6 @@ class Campaign
             INNER JOIN mail_data_emails mde ON mc.id = mde.campaign_id
             WHERE mc.id = " . intval($id) . "
             LIMIT 1";
-
 
 
             $result = $this->db->select($sql);
@@ -347,5 +386,32 @@ class Campaign
         }
     }
 
+    function changeStatus($id,$status){
+        try {
+            if (empty($id) || empty($status)) {
+                return ['success' => false, 'message' => 'El ID y el estado son obligatorios.'];
+            }
+
+            $sql = " UPDATE mail_campaigns
+            SET status = '".$status."', updated_at = NOW()
+            WHERE id = ".$id;
+
+            $result = $this->db->query($sql);
+
+            if (!$result) {
+                return ['success' => false, 'message' => 'Error al cambiar el estado de la campaña.'];
+            }
+
+            return ['success' => true, 'message' => 'Estado de la campaña actualizado correctamente.'];
+
+        } catch (\Exception $e) {
+            $this->logs->error("Error al cambiar el estado de la campaña: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al cambiar el estado de la campaña.',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
 
 }

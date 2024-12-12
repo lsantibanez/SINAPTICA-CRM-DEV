@@ -104,7 +104,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                         <select class="form-control" v-model="item.phone" id="phone">
                                                             <option value="" disabled selected>Seleccione una opción
                                                             </option>
-                                                            <option v-for="phone in phones" :key="phone" :value="phone">
+                                                            <option :selected="phone === item.phone" v-for="phone in phones" :key="phone" :value="phone">
                                                                 {{ phone }}
                                                             </option>
                                                         </select>
@@ -119,7 +119,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                                 id="identity">
                                                             <option value="" disabled selected>Seleccione una opción
                                                             </option>
-                                                            <option v-for="identity in identities" :key="identity"
+                                                            <option :selected="identity === item.identity" v-for="identity in identities" :key="identity"
                                                                     :value="identity">
                                                                 {{ identity }}
                                                             </option>
@@ -252,6 +252,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             data: {
                 programmed: 0,
                 item: {
+                    id: null,
                     name: '',
                     phone: 0,
                     identity: '',
@@ -274,9 +275,22 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 loading: false,
             },
             mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+
+                if (id) {
+                    this.item.id = id;
+                    this.loadRecord(id)
+                        .catch(error => {
+                            console.error("Error al cargar el registro:", error);
+                            toastr.error("No se pudo cargar el registro desde la URL.");
+                        });
+                } else {
+                    console.log("No se encontró un ID en los parámetros de la URL.");
+                }
             },
-            computed: {},
             methods: {
+
                 clearMessage() {
                     const confirmed = window.confirm("¿Estás seguro de que deseas limpiar el mensaje?");
 
@@ -327,54 +341,94 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         this.loading = false;
                     }
                 },
+                async loadRecord(id) {
+                    this.loading = true;
+
+                    try {
+                        const response = await axios.get(`/includes/sms/showSms?id=${id}`);
+
+                        if (response.data.success) {
+                            this.isUploaded = true;
+                            const data = response.data.items[0];
+                            this.item.name = data.name;
+                            this.item.phone = data.phone;
+                            this.item.identity = data.identity;
+                            this.item.message = data.preview;
+                            this.customVariables = data.customVariables || [];
+
+                        } else {
+                            toastr.warning("No se pudo cargar el registro.");
+                        }
+                    } catch (error) {
+                        console.error("Error al cargar el registro:", error);
+                        toastr.error("Error al cargar el registro.");
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
                 async submitForm() {
                     this.loading = true;
 
                     try {
                         const formData = new FormData();
-
                         formData.append("name", this.item.name);
                         formData.append("phone", this.item.phone ?? null);
                         formData.append("identity", this.item.identity);
                         formData.append("message", this.item.message);
-                        formData.append("file", this.excelFile);
 
-                        const response = await axios.post("/includes/sms/insertSms", formData, {
-                            headers: {"Content-Type": "multipart/form-data"},
-                        });
+                        if (this.excelFile) {
+                            formData.append("file", this.excelFile);
+                        }
 
-                        console.log(response.data);
+                        let response;
+                        if (this.item.id) {
+                            formData.append("id", this.item.id);
+                            response = await axios.post("/includes/sms/updateSms", formData, {
+                                headers: { "Content-Type": "multipart/form-data" },
+                            });
+                        } else {
+                            response = await axios.post("/includes/sms/insertSms", formData, {
+                                headers: { "Content-Type": "multipart/form-data" },
+                            });
+                        }
 
                         if (response.data.success) {
-                            toastr.success(response.data.message);
+                            toastr.success(response.data.message || "Operación realizada exitosamente.");
+                            await this.loadRecord(response.data.campaignSmsId);
 
-                            const previewData = response.data.previewData;
+                            const previewData = response.data.previewData || [];
 
-                            const firstItem = previewData[0];
-                            const customVariables = JSON.parse(firstItem.customVariables);
-                            this.tableHeaders = Object.keys(customVariables);
+                            if (previewData.length) {
+                                const firstItem = previewData[0];
+                                const customVariables = JSON.parse(firstItem.customVariables);
+                                this.tableHeaders = Object.keys(customVariables);
 
-                            this.tableData = previewData.map(item => {
-                                const customVariables = JSON.parse(item.customVariables);
-                                return {
-                                    ...customVariables,
-                                    updatedMessage: item.updatedMessage
-                                };
-                            });
-                            this.isPreview = true;
+                                this.tableData = previewData.map(item => {
+                                    const customVariables = JSON.parse(item.customVariables);
+                                    return {
+                                        ...customVariables,
+                                        updatedMessage: item.updatedMessage,
+                                    };
+                                });
+
+                                this.isPreview = true;
+                            }
                         } else {
-                            toastr.error(response.data.message);
+                            toastr.error(response.data.message || "Ocurrió un error al procesar la solicitud.");
                         }
                     } catch (error) {
+                        console.error("Error al enviar el formulario:", error);
                         if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                            toastr.error(error.response.data.message || "Ocurrió un error al procesar la solicitud.");
                         } else {
-                            toastr.error('Error de conexión con el servidor.');
+                            toastr.error("Error de conexión con el servidor.");
                         }
                     } finally {
                         this.loading = false;
                     }
                 }
+
             },
         });
     </script>

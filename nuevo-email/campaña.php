@@ -95,10 +95,10 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         <thead>
                                         <tr>
                                             <th>Nombre</th>
-                                            <th style="width: 5%; text-align: center;">Estadísticas</th>
+                                            <th style="width: 30%; text-align: center;">Estadísticas</th>
                                             <th style="width: 15%; text-align: center;">Estado</th>
-                                            <th style="width: 15%; text-align: center;">Creado el</th>
-                                            <th style="width: 10%; text-align: center;">Acciones</th>
+                                            <th style="width:15%; text-align: center;">Creado el</th>
+                                            <th style="width: 15%; text-align: center;">Acciones</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -116,21 +116,23 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             <td>{{ formatDateToCustomFormat(item.created_at) }}</td>
                                             <td>
                                                 <div class="btn-group">
-
                                                     <div class="btn-group btn-group-justified">
-                                                        <a class="btn btn-info"
-                                                           :href="'/nuevo-email/editar-campaña?id='+item.id"
-                                                           data-toggle="tooltip" data-placement="top" title="Editar">
-                                                            <i class="fa-regular fa-pen-to-square"></i>
+                                                        <a v-if="item.status === 'PAUSADO' || item.status === 'CARGADA'"
+                                                           class="btn btn-success"
+                                                           @click="updateCampaignStatus(item.id, 'PROCESANDO')"
+                                                           data-toggle="tooltip" data-placement="top" title="Pausado">
+                                                            <i class="fa-solid fa-play"></i>
                                                         </a>
-                                                        <a class="btn btn-success"
-                                                           :href="'/nuevo-email/seleccionar-plantilla?id='+item.id"
-                                                           data-toggle="tooltip" data-placement="top" title="Seleccionar Plantilla">
-                                                            <i class="fa-regular fa-hand-pointer"></i>
+
+                                                        <a v-if="item.status === 'PROCESANDO'"
+                                                           class="btn btn-warning"
+                                                           @click="updateCampaignStatus(item.id, 'PAUSADO')"
+                                                           data-toggle="tooltip" data-placement="top" title="Procesando">
+                                                            <i class="fa-solid fa-pause"></i>
                                                         </a>
 
                                                         <a class="btn btn-danger"
-                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(item.id)">
+                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteCampaign(item.id)">
                                                             <i class="fa-regular fa-trash-can"></i>
                                                         </a>
 
@@ -205,12 +207,12 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             loading: true,
         },
         mounted() {
-            this.getTemplates();
+            this.getCampaigns();
             dayjs.extend(dayjs_plugin_relativeTime);
             dayjs.locale('es');
         },
         methods: {
-            getTemplates() {
+            getCampaigns() {
                 this.loading = true;
                 axios.get('/includes/campaigns/getCampaigns')
                     .then(response => {
@@ -228,11 +230,10 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 return dayjs(date).fromNow();
             },
             formatDateToCustomFormat(date) {
-                return dayjs(date).format('D [de] MMMM [de] YYYY');
+                return dayjs(date).format('YYYY-MM-d');
             },
             isEnable(enable){
                 if(enable === "1" ){
-
                     return true;
                 }else{
                     return false;
@@ -253,63 +254,58 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     this.updatePage();
                 }
             },
-            // updateTemplateState(item) {
-            //     console.log(item.enable)
-            //     const updatedEnableStatus = item.enable == 1 ? false : true;
-            //     axios.post(`/includes/templates/updateStatusTemplate`, {
-            //         enable: updatedEnableStatus,
-            //         id: item.id
-            //     })
-            //         .then(response => {
-            //             if (response.data.success) {
-            //                 toastr.success(response.data.message);
-            //             } else {
-            //                 toastr.warning(response.data.message);
-            //             }
-            //             item.enable = updatedEnableStatus;
-            //         })
-            //         .catch(error => {
-            //             if (error.response) {
-            //                 toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-            //             } else {
-            //                 toastr.error('Error de conexión con el servidor.');
-            //             }
-            //             console.error(error);
-            //         })
-            //         .finally(() => {
-            //             this.getTemplates();
-            //         });
-            // },
-            // deleteTemplate(templateId){
-            //     if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
-            //         return;
-            //     }
-            //
-            //     this.loading = true;
-            //     axios.get(`/includes/new_email/deleteTemplate`,{
-            //         params: {id: templateId}
-            //     })
-            //         .then(response => {
-            //             if (response.data.success) {
-            //                 toastr.success(response.data.message);
-            //                 this.getTemplates();
-            //             } else {
-            //                 toastr.warning(response.data.message);
-            //             }
-            //
-            //         })
-            //         .catch(error => {
-            //             if (error.response) {
-            //                 toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-            //             } else {
-            //                 toastr.error('Error de conexión con el servidor.');
-            //             }
-            //         })
-            //         .finally(() => {
-            //             this.loading = false;
-            //         });
-            // }
+            updateCampaignStatus(campaignId,status){
+                if (!confirm('¿Estás seguro de que actualizar el estado de la campaña?')) {
+                    return;
+                }
 
+                    this.loading = true;
+                    axios.post('/includes/campaigns/changeStatusCampaign?id=' + campaignId, { status })
+                        .then(response => {
+                            if(response.data.success){
+                                toastr.success(response.data.message);
+                                this.getCampaigns();
+                            }else{
+                                toastr.warning(response.data.message);
+                            }
+                        })
+                        .catch(error => {
+                            toastr.error("Error al actualizar el estado de la campaña");
+                            console.log(error);
+                        })
+                        .finally(() => {
+                            this.loading = false;
+                        });
+            },
+            deleteCampaign(campaignId){
+                if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
+                    return;
+                }
+
+                this.loading = true;
+                axios.get(`/includes/campaigns/deleteCampaign`,{
+                    params: {id: campaignId}
+                })
+                    .then(response => {
+                        if (response.data.success) {
+                            toastr.success(response.data.message);
+                            this.getCampaigns();
+                        } else {
+                            toastr.warning(response.data.message);
+                        }
+
+                    })
+                    .catch(error => {
+                        if (error.response) {
+                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
+                        } else {
+                            toastr.error('Error de conexión con el servidor.');
+                        }
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            }
         },
     });
 </script>
