@@ -95,7 +95,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         <thead>
                                         <tr>
                                             <th>Nombre</th>
-                                            <th style="width: 5%; text-align: center;">Disponible</th>
+                                            <th style="width: 5%; text-align: center;">Cant. SMS</th>
                                             <th style="width: 15%; text-align: center;">Vista Previa</th>
                                             <th style="width: 15%; text-align: center;">Creado el</th>
                                             <th style="width: 10%; text-align: center;">Acciones</th>
@@ -108,37 +108,31 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         <tr v-for="item in paginatedItems" :key="item.id">
                                             <td>{{ item.name }}</td>
                                             <td>
-                                                <div class="form-check form-switch">
-
-<!--                                                    <input :checked="isEnable(item.enable)"-->
-<!--                                                           class="form-check-input"-->
-<!--                                                           type="checkbox"-->
-<!--                                                           role="switch"-->
-<!--                                                           id="flexSwitchCheckDefault"-->
-<!--                                                           @change="updateTemplateState(item)"/>-->
-                                                </div>
+                                                {{ item.quantity}}
                                             </td>
                                             <td>
-<!--                                                <img :src="item.urlPreview" alt="Vista Previa"-->
-<!--                                                     class="template-image" @click="openModal(item.urlPreview)">-->
+                                              {{item.preview}}
                                             </td>
                                             <td>{{ formatDateToCustomFormat(item.created_at) }}</td>
                                             <td>
                                                 <div class="btn-group">
-
                                                     <div class="btn-group btn-group-justified">
-                                                        <a type="submit" class="btn btn-primary"
-                                                           @click="doubleTemplate(item.id)" data-toggle="tooltip"
-                                                           data-placement="top" title="Duplicar">
-                                                            <i class="fa-regular fa-copy"></i>
+                                                        <a v-if="item.status === 'PAUSADO' || item.status === 'CARGADO'"
+                                                           class="btn btn-success"
+                                                           @click="updateCampaignStatus(item.id, 'PROCESANDO')"
+                                                           data-toggle="tooltip" data-placement="top" title="Pausado">
+                                                            <i class="fa-solid fa-play"></i>
                                                         </a>
-                                                        <a class="btn btn-info"
-                                                           :href="'/nuevo-email/editar-plantilla?id='+item.id"
-                                                           data-toggle="tooltip" data-placement="top" title="Editar">
-                                                            <i class="fa-regular fa-pen-to-square"></i>
+
+                                                        <a v-if="item.status === 'PROCESANDO'"
+                                                           class="btn btn-warning"
+                                                           @click="updateCampaignStatus(item.id, 'PAUSADO')"
+                                                           data-toggle="tooltip" data-placement="top" title="Procesando">
+                                                            <i class="fa-solid fa-pause"></i>
                                                         </a>
+
                                                         <a class="btn btn-danger"
-                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteTemplate(item.id)">
+                                                           data-toggle="tooltip" data-placement="top" title="Eliminar" @click="deleteCampaign(item.id)">
                                                             <i class="fa-regular fa-trash-can"></i>
                                                         </a>
 
@@ -169,25 +163,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         </div>
                     </div>
                     <!--Fin Tabla-->
-
-                    <!--Modal-->
-                    <div class="modal fade" id="imageModal" tabindex="-1" role="dialog"
-                         aria-labelledby="imageModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                    <h4 class="modal-title" id="imageModalLabel">Vista Previa de la Imagen</h4>
-                                </div>
-                                <div class="modal-body text-center">
-                                    <img id="modalImage" src="" alt="Vista Previa Ampliada" class="img-responsive">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!--Fin Modal-->
                 </div>
             </div><!-- page content --->
         </div><!-- page container -->
@@ -260,7 +235,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             },
             isEnable(enable){
                 if(enable === "1" ){
-
                     return true;
                 }else{
                     return false;
@@ -281,43 +255,42 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     this.updatePage();
                 }
             },
-            doubleTemplate(templateId) {
+            updateCampaignStatus(campaignId,status){
+                if (!confirm('¿Estás seguro de que actualizar el estado de la campaña?')) {
+                    return;
+                }
+
                 this.loading = true;
-                axios.get(`/includes/templates/doubleTemplate`, {
-                    params: {id: templateId}
-                })
+                axios.post('/includes/sms/changeStatusCampaign?id=' + campaignId, { status })
                     .then(response => {
-                        if (response.data.success) {
+                        if(response.data.success){
                             toastr.success(response.data.message);
-                        } else {
+                            this.getSms();
+                        }else{
                             toastr.warning(response.data.message);
                         }
-                        this.getTemplates();
                     })
                     .catch(error => {
-                        if (error.response) {
-                            toastr.error(error.response.data.message || 'Ocurrió un error al procesar la solicitud.');
-                        } else {
-                            toastr.error('Error de conexión con el servidor.');
-                        }
+                        toastr.error("Error al actualizar el estado de la campaña");
+                        console.log(error);
                     })
                     .finally(() => {
                         this.loading = false;
-                    })
+                    });
             },
-            deleteTemplate(templateId){
+            deleteCampaign(campaignId){
                 if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
                     return;
                 }
 
                 this.loading = true;
-                axios.get(`/includes/new_email/deleteTemplate`,{
-                    params: {id: templateId}
+                axios.get(`/includes/sms/deleteSms`,{
+                    params: {id: campaignId}
                 })
                     .then(response => {
                         if (response.data.success) {
                             toastr.success(response.data.message);
-                            this.getTemplates();
+                            this.getSms();
                         } else {
                             toastr.warning(response.data.message);
                         }
@@ -334,7 +307,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         this.loading = false;
                     });
             }
-
         },
     });
 </script>

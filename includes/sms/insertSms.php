@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $sms = new CampaignSms();
 
-    $response = $sms->insertOrUpdate($request);
+    $response = $sms->insert($request);
 
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);

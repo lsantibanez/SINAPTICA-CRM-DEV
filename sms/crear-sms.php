@@ -104,7 +104,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                         <select class="form-control" v-model="item.phone" id="phone">
                                                             <option value="" disabled selected>Seleccione una opción
                                                             </option>
-                                                            <option :selected="phone === item.phone" v-for="phone in phones" :key="phone" :value="phone">
+                                                            <option :selected="phone === item.phone"
+                                                                    v-for="phone in phones" :key="phone" :value="phone">
                                                                 {{ phone }}
                                                             </option>
                                                         </select>
@@ -119,7 +120,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                                 id="identity">
                                                             <option value="" disabled selected>Seleccione una opción
                                                             </option>
-                                                            <option :selected="identity === item.identity" v-for="identity in identities" :key="identity"
+                                                            <option :selected="identity === item.identity"
+                                                                    v-for="identity in identities" :key="identity"
                                                                     :value="identity">
                                                                 {{ identity }}
                                                             </option>
@@ -127,32 +129,32 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-6">
-                                                    <div class="mb-4">
-                                                        <label for="select_wallet" class="form-label">Seleccione cartera
-                                                            a
-                                                            Asignar (Opcional)</label>
-                                                        <select class="form-control" v-model="select_wallet"
-                                                                id="select_wallet">
-                                                            <option value="" disabled selected>Seleccione una opción
-                                                            </option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="mb-4">
-                                                        <label for="wallet" class="form-label">Crear nueva
-                                                            Cartera</label>
-                                                        <div class="d-flex gap-10">
-                                                            <input type="text" class="form-control" v-model="wallet"
-                                                                   id="wallet"/>
-                                                            <button type="button" class="btn btn-primary">Guardar
-                                                                Cartera
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <!--                                                <div class="col-md-6">-->
+                                                <!--                                                    <div class="mb-4">-->
+                                                <!--                                                        <label for="select_wallet" class="form-label">Seleccione cartera-->
+                                                <!--                                                            a-->
+                                                <!--                                                            Asignar (Opcional)</label>-->
+                                                <!--                                                        <select class="form-control" v-model="select_wallet"-->
+                                                <!--                                                                id="select_wallet">-->
+                                                <!--                                                            <option value="" disabled selected>Seleccione una opción-->
+                                                <!--                                                            </option>-->
+                                                <!--                                                        </select>-->
+                                                <!--                                                    </div>-->
+                                                <!--                                                </div>-->
+                                                <!---->
+                                                <!--                                                <div class="col-md-6">-->
+                                                <!--                                                    <div class="mb-4">-->
+                                                <!--                                                        <label for="wallet" class="form-label">Crear nueva-->
+                                                <!--                                                            Cartera</label>-->
+                                                <!--                                                        <div class="d-flex gap-10">-->
+                                                <!--                                                            <input type="text" class="form-control" v-model="wallet"-->
+                                                <!--                                                                   id="wallet"/>-->
+                                                <!--                                                            <button type="button" class="btn btn-primary">Guardar-->
+                                                <!--                                                                Cartera-->
+                                                <!--                                                            </button>-->
+                                                <!--                                                        </div>-->
+                                                <!--                                                    </div>-->
+                                                <!--                                                </div>-->
 
                                             </div>
                                             <div class="col-md-12">
@@ -195,25 +197,77 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         </div>
                                     </form>
 
+
                                     <div v-if="isPreview" class="col-md-12">
-                                    <span class="form-label">Preview</span>
-                                    <table class="table">
-                                        <thead>
-                                        <tr>
-                                            <th v-for="(header, index) in tableHeaders" :key="index">{{ header }}</th>
-                                            <th>Mensaje</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
-                                            <td v-for="(header, colIndex) in tableHeaders" :key="colIndex">
-                                                {{ row[header] }}
-                                            </td>
-                                            <td>{{ row.updatedMessage }}</td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+
+                                        <span class="form-label">Preview</span>
+                                        <div v-if="!topRecords.length">
+                                            <p>No hay datos para mostrar en la vista previa.</p>
+                                        </div>
+                                        <table v-else class="table">
+                                            <thead>
+                                            <tr>
+                                                <th v-for="(header, index) in tableHeaders" :key="'header-' + index">
+                                                    {{ header }}
+                                                </th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr v-for="(row, rowIndex) in topRecords" :key="'row-' + rowIndex">
+                                                <td v-for="(header, colIndex) in tableHeaders" :key="'col-' + colIndex">
+                                                    {{ row[header] }}
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog"
+                                         aria-labelledby="myModalLabel">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <button type="button" class="close" data-dismiss="modal"
+                                                            aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                    <h4 class="modal-title" id="myModalLabel">Visualización de
+                                                        mensajes</h4>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <table class="table table-striped">
+                                                        <thead>
+                                                        <tr>
+                                                            <th>Cant. SMS</th>
+                                                            <th>Contiene acentos</th>
+                                                            <th>Largo</th>
+                                                            <th>Mensaje</th>
+                                                            <th>Teléfono</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr v-for="(data, index) in previewMessage" :key="index">
+                                                            <td>{{ data.cantSms }}</td>
+                                                            <td>{{ data.contieneAcentos }}</td>
+                                                            <td>{{ data.largo }}</td>
+                                                            <td>{{ data.mensaje }}</td>
+                                                            <td>{{ data.telefono }}</td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                                                        Cerrar
+                                                    </button>
+                                                    <button type="button" class="btn btn-primary">Guardar cambios
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End Modal -->
                                 </div>
                             </div>
                         </div>
@@ -244,8 +298,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <script src="/js/extra/flatpickr.js"></script>
     <script src="/js/extra/toastr.min.js"></script>
     <script src="/js/extra/vuejs-paginate@latest.js"></script>
-    <script src="/js/extra/html2canvas.min.js"></script>
-    <script src="/js/extra/dropzone.min.js"></script>
     <script>
         var app = new Vue({
             el: '#appConsultaTemplates',
@@ -266,28 +318,17 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                 phones: [],
                 identities: [],
                 wallet: '',
+                topRecords: [],
                 excelFile: null,
                 excelValidated: false,
                 excelPreview: [],
                 tableHeaders: [],
                 tableData: [],
+                previewMessage: [],
                 isPreview: false,
                 loading: false,
             },
             mounted() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const id = urlParams.get('id');
-
-                if (id) {
-                    this.item.id = id;
-                    this.loadRecord(id)
-                        .catch(error => {
-                            console.error("Error al cargar el registro:", error);
-                            toastr.error("No se pudo cargar el registro desde la URL.");
-                        });
-                } else {
-                    console.log("No se encontró un ID en los parámetros de la URL.");
-                }
             },
             methods: {
 
@@ -299,7 +340,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     }
                 },
                 insertVariable(variable) {
-                    this.item.message += `[${variable}] `;
+                    this.item.message += `[${variable}]`;
                     this.updateCharacterCount();
                 },
                 updateCharacterCount() {
@@ -326,9 +367,18 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         });
 
                         if (response.data.success) {
+                            if (this.topRecords) {
+                                this.isPreview = false;
+                                this.customVariables = [];
+                                this.tableHeaders = [];
+                                this.topRecords = [];
+                            }
+
                             this.customVariables = response.data.headers;
                             this.phones = response.data.headers;
                             this.identities = response.data.headers;
+                            this.topRecords = response.data.topRecords || [];
+                            this.isPreview = true;
                             this.isUploaded = true;
                             toastr.success("Archivo procesado correctamente.");
                         } else {
@@ -341,34 +391,74 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         this.loading = false;
                     }
                 },
-                async loadRecord(id) {
-                    this.loading = true;
-
-                    try {
-                        const response = await axios.get(`/includes/sms/showSms?id=${id}`);
-
-                        if (response.data.success) {
-                            this.isUploaded = true;
-                            const data = response.data.items[0];
-                            this.item.name = data.name;
-                            this.item.phone = data.phone;
-                            this.item.identity = data.identity;
-                            this.item.message = data.preview;
-                            this.customVariables = data.customVariables || [];
-
-                        } else {
-                            toastr.warning("No se pudo cargar el registro.");
-                        }
-                    } catch (error) {
-                        console.error("Error al cargar el registro:", error);
-                        toastr.error("Error al cargar el registro.");
-                    } finally {
-                        this.loading = false;
+                setTableHeaders() {
+                    if (this.topRecords.length > 0) {
+                        this.tableHeaders = Object.keys(this.topRecords[0]);
+                    } else {
+                        this.tableHeaders = [];
                     }
                 },
-
                 async submitForm() {
                     this.loading = true;
+                    if (!this.item.name || !this.item.phone || !this.item.message) {
+                        toastr.warning("Por favor, complete todos los campos requeridos.");
+                        return;
+                    }
+
+                    $('#myModal').modal('show');
+
+                    const formatMessage = this.item.message.trim().replace(new RegExp(String.fromCharCode(160), "g"), " ");
+
+                    const previewData = this.topRecords.map(record => {
+                        let message = formatMessage;
+
+                        this.customVariables.forEach(variable => {
+                            const regex = new RegExp(`\\[${variable}\\]`, 'g');
+                            if (record[variable]) {
+                                message = message.replace(regex, record[variable]);
+                            } else {
+                                message = message.replace(regex, '');
+                            }
+                        });
+
+                        const largoMensaje = message.length;
+
+                        let partes = 1;
+                        let withCharacter = 'NO';
+                        const regex = new RegExp('[^0-9a-zA-ZñÑ.+-\\/\(\)#%,@:\S+ ]', 'gi');
+                        if (regex.test(message)) {
+                            withCharacter = 'SI';
+                            if (largoMensaje > 160) {
+                                partes = Math.ceil(largoMensaje / 157);
+                            }
+                        }
+
+                        return {
+                            cantSms: partes,
+                            contieneAcentos: withCharacter,
+                            largo: largoMensaje,
+                            mensaje: message,
+                            telefono: record.FONO,
+                        };
+                    });
+
+                    this.previewMessage = previewData;
+
+                    const confirmed = new Promise((resolve, reject) => {
+                        $('#myModal').on('hidden.bs.modal', () => {
+                            resolve(false);
+                        });
+                        $('#myModal').on('click', '.btn-primary', () => {
+                            resolve(true);
+                        });
+                    });
+
+                    const userConfirmed = await confirmed;
+
+                    if (!userConfirmed) {
+                        this.loading = false;
+                        return;
+                    }
 
                     try {
                         const formData = new FormData();
@@ -381,42 +471,17 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             formData.append("file", this.excelFile);
                         }
 
-                        let response;
-                        if (this.item.id) {
-                            formData.append("id", this.item.id);
-                            response = await axios.post("/includes/sms/updateSms", formData, {
-                                headers: { "Content-Type": "multipart/form-data" },
-                            });
-                        } else {
-                            response = await axios.post("/includes/sms/insertSms", formData, {
-                                headers: { "Content-Type": "multipart/form-data" },
-                            });
-                        }
+                        const response = await axios.post("/includes/sms/insertSms", formData, {
+                            headers: {"Content-Type": "multipart/form-data"},
+                        });
 
                         if (response.data.success) {
-                            toastr.success(response.data.message || "Operación realizada exitosamente.");
-                            await this.loadRecord(response.data.campaignSmsId);
-
-                            const previewData = response.data.previewData || [];
-
-                            if (previewData.length) {
-                                const firstItem = previewData[0];
-                                const customVariables = JSON.parse(firstItem.customVariables);
-                                this.tableHeaders = Object.keys(customVariables);
-
-                                this.tableData = previewData.map(item => {
-                                    const customVariables = JSON.parse(item.customVariables);
-                                    return {
-                                        ...customVariables,
-                                        updatedMessage: item.updatedMessage,
-                                    };
-                                });
-
-                                this.isPreview = true;
-                            }
+                            toastr.success(response.data.message || "Campaña guardada con éxito.");
+                            window.location.href = "http://sinaptica-crm-dev.test/sms/listar-sms"
                         } else {
-                            toastr.error(response.data.message || "Ocurrió un error al procesar la solicitud.");
+                            toastr.warning(response.data.message || "No se pudo guardar la campaña.");
                         }
+
                     } catch (error) {
                         console.error("Error al enviar el formulario:", error);
                         if (error.response) {
@@ -428,7 +493,14 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         this.loading = false;
                     }
                 }
-
+            },
+            watch: {
+                topRecords: {
+                    handler(newValue) {
+                        this.setTableHeaders();
+                    },
+                    immediate: true,
+                },
             },
         });
     </script>

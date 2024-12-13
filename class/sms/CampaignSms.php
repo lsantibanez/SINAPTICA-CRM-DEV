@@ -28,7 +28,7 @@ class CampaignSms
     {
         try {
 
-            $sql = "SELECT id,name,phone,start_date,end_date,status,created_at 
+            $sql = "SELECT id,name,quantity,preview,status,created_at 
                         FROM msj_campaign_sms 
                         WHERE idCedente='" . $this->idCedente . "' 
                         AND idMandante='" . $this->idMandante . "' 
@@ -69,16 +69,7 @@ class CampaignSms
             $highestColumn = $sheet->getHighestColumn();
             $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
 
-            $requiredHeaders = ['IDENTIFICADOR', 'FONO'];
             $fileHeaders = array_map('strtoupper', $headers);
-
-            $missingHeaders = array_diff($requiredHeaders, $fileHeaders);
-            if (!empty($missingHeaders)) {
-                return [
-                    'success' => false,
-                    'message' => 'El archivo no contiene las siguientes cabeceras requeridas: ' . implode(', ', $missingHeaders),
-                ];
-            }
 
             $rows = $sheet->rangeToArray("A2:{$highestColumn}11");
             $preview = [];
@@ -104,7 +95,7 @@ class CampaignSms
         }
     }
 
-    function insertOrUpdate($request)
+    function insert($request)
     {
         $requiredFields = ['name', 'phone', 'identity', 'message'];
         foreach ($requiredFields as $field) {
@@ -115,135 +106,188 @@ class CampaignSms
 
         $file = $request['file'] ?? null;
 
-        $campaignId = $request['id'] ?? null;
-
-        if ($file) {
-            $allowedExtensions = ['xls', 'xlsx'];
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            if (!in_array($extension, $allowedExtensions)) {
-                return ['success' => false, 'message' => 'El archivo debe ser un Excel con extensión .xls o .xlsx.'];
-            }
-
-            try {
-                $tempPath = $file['tmp_name'];
-                $reader = IOFactory::createReaderForFile($tempPath);
-                $spreadsheet = $reader->load($tempPath);
-                $sheet = $spreadsheet->getActiveSheet();
-
-                $highestColumn = $sheet->getHighestColumn();
-                $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
-                $fileHeaders = array_map('strtoupper', $headers);
-
-                $requiredHeaders = [$request['phone'], $request['identity']];
-                foreach ($requiredHeaders as $header) {
-                    if (!in_array($header, $fileHeaders)) {
-                        return ['success' => false, 'message' => 'El archivo no contiene las cabeceras requeridas.'];
-                    }
-                }
-
-                if ($campaignId) {
-                    $deleteDataSql = "DELETE FROM msj_data_sms WHERE campaign_sms_id= ".$campaignId;
-
-                    $this->db->query($deleteDataSql);
-                } else {
-                    $campaignData = [
-                        'name' => $request['name'],
-                        'identity' => $request['identity'],
-                        'phone' => $request['phone'],
-                        'preview' => $request['message'],
-                        'status' => 'CARGADO',
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'idCedente' => $this->idCedente,
-                        'idMandante' => $this->idMandante
-                    ];
-                    $campaignId = $this->db->insertWithParams('msj_campaign_sms', $campaignData);
-
-                    if (!$campaignId) {
-                        return ['success' => false, 'message' => 'Error al insertar la campaña.'];
-                    }
-                }
-
-                $rows = $sheet->rangeToArray("A2:{$highestColumn}" . $sheet->getHighestRow());
-                $previewData = [];
-
-                foreach (array_chunk($rows, 1000) as $chunk) {
-                    foreach ($chunk as $index => $row) {
-                        $row = array_combine($fileHeaders, array_map('trim', $row));
-                        $customVariables = json_encode($row);
-
-                        $messageTemplate = $request['message'];
-                        $message = preg_replace_callback('/\[(\w+)\]/', function ($matches) use ($row) {
-                            $key = strtoupper($matches[1]);
-                            return $row[$key] ?? $matches[0];
-                        }, $messageTemplate);
-
-                        $quantity = strlen($message);
-                        $specialCharacters = preg_match('/[^0-9a-zA-ZñÑ.+-\\/\(\)#%,@:\S+]/', $message) ? 0 : 1;
-
-                        if (count($previewData) < 5) {
-                            $previewData[] = [
-                                'quantity' => $quantity,
-                                'special_characters' => $specialCharacters,
-                                'customVariables' => $customVariables,
-                                'updatedMessage' => $message
-                            ];
-                        }
-
-                        $smsData = [
-                            'identity' => $row[$request['identity']],
-                            'phone' => $row[$request['phone']],
-                            'customVariables' => $customVariables,
-                            'campaign_sms_id' => $campaignId,
-                            'message' => $message,
-                            'quantity' => $quantity,
-                            'special_characters' => $specialCharacters,
-                            'status' => 'CARGADO',
-                            'created_at' => date('Y-m-d H:i:s'),
-                            'updated_at' => date('Y-m-d H:i:s'),
-                        ];
-                        $this->db->insertWithParams('msj_data_sms', $smsData);
-                    }
-                }
-
-                return [
-                    'success' => true,
-                    'message' => 'Campaña creada y datos almacenados exitosamente.',
-                    'campaignSmsId' => $campaignId,
-                    'previewData' => $previewData
-                ];
-            } catch (\Exception $e) {
-                return ['success' => false, 'message' => 'Error al procesar la campaña: ' . $e->getMessage()];
-            }
+        if (!$file) {
+            return ['success' => false, 'message' => 'Debe subir un archivo Excel.'];
         }
 
-        if ($campaignId) {
+        $allowedExtensions = ['xls', 'xlsx'];
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        if (!in_array($extension, $allowedExtensions)) {
+            return ['success' => false, 'message' => 'El archivo debe ser un Excel con extensión .xls o .xlsx.'];
+        }
+
+        try {
+            $tempPath = $file['tmp_name'];
+            $reader = IOFactory::createReaderForFile($tempPath);
+            $spreadsheet = $reader->load($tempPath);
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $highestColumn = $sheet->getHighestColumn();
+            $headers = $sheet->rangeToArray("A1:{$highestColumn}1")[0];
+            $fileHeaders = array_map('strtoupper', $headers);
+
+            $requiredHeaders = [strtoupper($request['phone']), strtoupper($request['identity'])];
+            foreach ($requiredHeaders as $header) {
+                if (!in_array($header, $fileHeaders)) {
+                    return ['success' => false, 'message' => "El archivo no contiene la cabecera requerida: $header."];
+                }
+            }
+
+            $quantity = strlen($request['message']);
+
             $campaignData = [
                 'name' => $request['name'],
                 'identity' => $request['identity'],
                 'phone' => $request['phone'],
+                'quantity' => $quantity,
                 'preview' => $request['message'],
-                'updated_at' => date('Y-m-d H:i:s')
+                'status' => 'CARGADO',
+                'created_at' => date('Y-m-d H:i:s'),
+                'idCedente' => $this->idCedente,
+                'idMandante' => $this->idMandante
             ];
-            $conditions = [
-                'id' => $campaignId
+            $campaignId = $this->db->insertWithParams('msj_campaign_sms', $campaignData);
+
+            if (!$campaignId) {
+                return ['success' => false, 'message' => 'Error al insertar la campaña.'];
+            }
+
+            $rows = $sheet->rangeToArray("A2:{$highestColumn}" . $sheet->getHighestRow());
+            $previewData = [];
+
+            foreach (array_chunk($rows, 1000) as $chunk) {
+                foreach ($chunk as $row) {
+                    $row = array_combine($fileHeaders, array_map('trim', $row));
+                    $customVariables = json_encode($row);
+
+                    $message = $this->generateMessage($request['message'], $row);
+                    $largoMensaje = strlen($message);
+
+                    $regex = '/[^0-9a-zA-ZñÑ.+\-\/\(\)#%,@:\S+ ]/u';
+                    $contieneAcentos = preg_match($regex, $message) ? 'SI' : 'NO';
+
+                    $partes = 1;
+                    if ($contieneAcentos === 'SI') {
+                        if ($largoMensaje > 160) {
+                            $partes = ceil($largoMensaje / 157);
+                        }
+                    } else {
+                        if ($largoMensaje > 160) {
+                            $partes = ceil($largoMensaje / 160);
+                        }
+                    }
+
+                    if (count($previewData) < 5) {
+                        $previewData[] = [
+                            'largo' => $largoMensaje,
+                            'contieneAcentos' => $contieneAcentos,
+                            'cantSms' => $partes,
+                            'customVariables' => $customVariables,
+                            'updatedMessage' => $message,
+                        ];
+                    }
+
+                    $smsData = [
+                        'identity' => $row[strtoupper($request['identity'])],
+                        'phone' => $row[strtoupper($request['phone'])],
+                        'customVariables' => $customVariables,
+                        'campaign_sms_id' => $campaignId,
+                        'message' => $message,
+                        'quantity' => $largoMensaje,
+                        'cant_sms' => $partes,
+                        'special_characters' => $contieneAcentos === 'SI' ? 0 : 1,
+                        'status' => 'CARGADO',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ];
+                    $this->db->insertWithParams('msj_data_sms', $smsData);
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Campaña creada y datos almacenados exitosamente.',
+                'campaignSmsId' => $campaignId,
+                'previewData' => $previewData
             ];
-
-            $this->db->updateWithParams('msj_campaign_sms', $campaignData, $conditions);
-
-            return ['success' => true, 'message' => 'Campaña actualizada exitosamente.', 'campaignSmsId' => $campaignId];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al procesar la campaña: ' . $e->getMessage()];
         }
+    }
 
-        return ['success' => false, 'message' => 'No se proporcionó un archivo ni un ID de campaña válido.'];
+    function changeStatus($id,$status){
+        try {
+            if (empty($id) || empty($status)) {
+                return ['success' => false, 'message' => 'El ID y el estado son obligatorios.'];
+            }
+
+            $sql = " UPDATE msj_campaign_sms
+            SET status = '".$status."', updated_at = NOW()
+            WHERE id = ".$id;
+
+            $result = $this->db->query($sql);
+
+            if (!$result) {
+                return ['success' => false, 'message' => 'Error al cambiar el estado de la campaña.'];
+            }
+
+            return ['success' => true, 'message' => 'Estado de la campaña actualizado correctamente.'];
+
+        } catch (\Exception $e) {
+            $this->logs->error("Error al cambiar el estado de la campaña: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al cambiar el estado de la campaña.',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    function delete($id){
+        $sql = "SELECT * FROM msj_campaign_sms WHERE id = ".$id;
+        $template = $this->db->select($sql);
+
+        if (!$template) {
+            $this->logs->error("No se encontró la plantilla por el id: " . $id);
+            return [
+                'success' => false,
+                'message' => 'No se encontró la plantilla',
+            ];
+        }
+        try {
+
+            $sqlDelete = "UPDATE msj_campaign_sms 
+                      SET isDeleted = 1, deleted_at = NOW()
+                      WHERE id = " . intval($id);
+
+            $this->db->query($sqlDelete);
+
+            return [
+                'success' => true,
+                'message' => 'Campaña eliminada correctamente',
+            ];
+
+        }catch (Exception $e) {
+            $this->logs->error($e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Ocurrió un error al clonar la plantilla',
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 
 
-    function showSms($id){
-        $sql = "SELECT * FROM msj_campaign_sms WHERE id = ".$id. " LIMIT 1";
-        $campaignSms = $this->db->select($sql);
-
-        if(!$campaignSms) return ['success' => false, 'message' => 'No se encontró la campaña sms con el id= '.$campaignSms->id];
-
-        return ['success' => true,'items'=>$campaignSms];
+    private function generateMessage($template, $data)
+    {
+        return preg_replace_callback('/\[(\w+)\]/', function ($matches) use ($data) {
+            $key = strtoupper($matches[1]);
+            return $data[$key] ?? $matches[0];
+        }, $template);
     }
 
+    private function hasSpecialCharacters($message)
+    {
+        return preg_match('/[^0-9a-zA-ZñÑ.+-\\/\(\)#%,@:\S+]/', $message);
+    }
 }
