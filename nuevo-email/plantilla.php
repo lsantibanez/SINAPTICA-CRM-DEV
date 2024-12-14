@@ -6,7 +6,7 @@ $db = new DB();
 require_once('../class/session/session.php');
 include("../class/global/global.php");
 $objetoSession = new Session('1,2,3,4,5,6', false);
-$objetoSession->crearVariableSession($array = array("idMenu" => "constas,constasrut"));
+$objetoSession->crearVariableSession($array = array("idMenu" => "emails,plantillas"));
 // ** Logout the current user. **
 $objetoSession->creaLogoutAction();
 if ((isset($_GET['doLogout'])) && ($_GET['doLogout'] == "true")) {

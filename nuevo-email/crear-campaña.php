@@ -6,7 +6,7 @@ $db = new DB();
 require_once('../class/session/session.php');
 include("../class/global/global.php");
 $objetoSession = new Session('1,2,3,4,5,6',false);
-$objetoSession->crearVariableSession($array = array("idMenu" => "constas,constasrut"));
+$objetoSession->crearVariableSession($array = array("idMenu" => "emails,campañas"));
 // ** Logout the current user. **
 $objetoSession->creaLogoutAction();
 if ((isset($_GET['doLogout'])) &&($_GET['doLogout']=="true")) {
@@ -769,6 +769,10 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     return html;
                 },
                 async submitForm(){
+                    if (!confirm('¿Estás seguro de que deseas crear esta campaña?')) {
+                        return;
+                    }
+
                     const formData = new FormData();
 
                     formData.append('name', this.campaign.step1.name);

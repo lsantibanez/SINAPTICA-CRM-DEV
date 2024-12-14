@@ -6,7 +6,7 @@ $db = new DB();
 require_once('../class/session/session.php');
 include("../class/global/global.php");
 $objetoSession = new Session('1,2,3,4,5,6', false);
-$objetoSession->crearVariableSession($array = array("idMenu" => "constas,constasrut"));
+$objetoSession->crearVariableSession($array = array("idMenu" => "sms,campaña"));
 // ** Logout the current user. **
 $objetoSession->creaLogoutAction();
 if ((isset($_GET['doLogout'])) && ($_GET['doLogout'] == "true")) {
@@ -54,6 +54,11 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             margin-top: 5px;
             font-size: 0.9em;
             color: #555;
+        }
+        .bg-gray{
+            background-color: gainsboro;
+            padding: 20px;
+            border-radius: 35px;
         }
     </style>
 </head>
@@ -178,11 +183,35 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                     <textarea
                                                             v-model="item.message"
                                                             id="message"
+                                                            rows="10"
                                                             class="form-control"
                                                             @input="updateCharacterCount"></textarea>
 
                                                     <small>{{ characterCount }} caracteres</small>
                                                 </div>
+                                            </div>
+                                            <div v-if="isPreview" class="col-md-12 bg-gray" >
+
+                                                <span class="form-label text-md"><strong>Preview</strong></span>
+                                                <div v-if="!topRecords.length">
+                                                    <p>No hay datos para mostrar en la vista previa.</p>
+                                                </div>
+                                                <table v-else class="table">
+                                                    <thead>
+                                                    <tr>
+                                                        <th v-for="(header, index) in tableHeaders" :key="'header-' + index">
+                                                            {{ header }}
+                                                        </th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr v-for="(row, rowIndex) in topRecords" :key="'row-' + rowIndex">
+                                                        <td v-for="(header, colIndex) in tableHeaders" :key="'col-' + colIndex">
+                                                            {{ row[header] }}
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
 
@@ -193,34 +222,9 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             </button>
                                             <span v-if="loading" class="spinner-border spinner-border-sm text-primary"
                                                   role="status"></span>
-                                            <button @click="clearMessage" class="btn btn-warning">Limpiar</button>
+                                            <button @click.prevent="clearMessage" class="btn btn-warning">Limpiar</button>
                                         </div>
                                     </form>
-
-
-                                    <div v-if="isPreview" class="col-md-12">
-
-                                        <span class="form-label">Preview</span>
-                                        <div v-if="!topRecords.length">
-                                            <p>No hay datos para mostrar en la vista previa.</p>
-                                        </div>
-                                        <table v-else class="table">
-                                            <thead>
-                                            <tr>
-                                                <th v-for="(header, index) in tableHeaders" :key="'header-' + index">
-                                                    {{ header }}
-                                                </th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr v-for="(row, rowIndex) in topRecords" :key="'row-' + rowIndex">
-                                                <td v-for="(header, colIndex) in tableHeaders" :key="'col-' + colIndex">
-                                                    {{ row[header] }}
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
 
                                     <!-- Modal -->
                                     <div class="modal fade" id="myModal" tabindex="-1" role="dialog"
@@ -457,6 +461,10 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                     if (!userConfirmed) {
                         this.loading = false;
+                        return;
+                    }
+
+                    if (!confirm('¿Estás seguro de que deseas crear esta campaña?')) {
                         return;
                     }
 
