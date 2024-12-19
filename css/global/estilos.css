@@ -7,25 +7,20 @@
 .ml-4{
     margin-left: 8px;
 }
-
 .mb-4 {
     margin-bottom: 8px;
 }
-
 .my-4 {
     margin-top: 8px;
     margin-bottom: 8px;
 }
-
 .mx-4 {
     margin-left: 8px;
     margin-right: 8px;
 }
-
 .mt-30 {
     margin-top: 60px;
 }
-
 .mb-30 {
     margin-bottom: 60px;
 }
@@ -34,23 +29,40 @@
     margin-top: 60px;
     margin-bottom: 60px;
 }
-
 .mx-30 {
     margin-left: 60px;
     margin-right: 60px;
 }
+.mt-20 {
+    margin-top: 40px;
+}
 
+.mb-20 {
+    margin-bottom: 40px;
+}
+
+.my-20 {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+.mx-20 {
+    margin-left: 40px;
+    margin-right: 40px;
+}
 .d-flex {
     display: flex;
 
 }
-
 .p-0 {
     padding: 0;
 }
 
 .gap-10 {
     gap: 10px;
+}
+.gap-5{
+    gap: 5px;
 }
 
 .items-center {
@@ -93,4 +105,8 @@
 }
 .p-2{
     padding: 5px !important;
+}
+.modal-dialog.modal-xl {
+    width: 90%;
+    max-width: 1200px;
 }

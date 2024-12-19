@@ -56,9 +56,15 @@ $nombreProyecto = $_SESSION['nombreCedente'];
             color: #555;
         }
         .bg-gray{
-            background-color: gainsboro;
+            background-color: #ececf9;
+
+        }
+        .shadow-lg{
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+            0 4px 6px -2px rgba(0, 0, 0, 0.05);
             padding: 20px;
             border-radius: 35px;
+
         }
     </style>
 </head>
@@ -190,7 +196,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                     <small>{{ characterCount }} caracteres</small>
                                                 </div>
                                             </div>
-                                            <div v-if="isPreview" class="col-md-12 bg-gray" >
+                                            <div v-if="isPreview" class="col-md-12 bg-gray shadow-lg my-20">
 
                                                 <span class="form-label text-md"><strong>Preview</strong></span>
                                                 <div v-if="!topRecords.length">
@@ -213,9 +219,47 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                                     </tbody>
                                                 </table>
                                             </div>
-                                        </div>
 
+                                        </div>
+                                        <div class="row bg-gray shadow-lg mb-20">
+                                            <h4>Información importante sobre las cantidades de SMS a enviar</h4>
+                                            <p>
+                                                Si el mensaje <strong>no posee</strong> caracteres especiales o acentos.
+                                            </p>
+                                            <ul>
+                                                <li>
+                                                    Si el largo sobrepasa los <strong>160 caracteres</strong> se consideran los primeros <strong>157</strong> un SMS
+                                                    y <strong>por cada 157 caracteres adicionales o su diferencia será 1 SMS</strong>.
+                                                    <ul>
+                                                        <li>Un texto de 175 caracteres se enviarán 2 SMS a cada teléfono de la lista, 1 SMS por los primeros 157 y un segundo de 18 caracteres restantes.</li>
+                                                        <li>Un texto de 471 caracteres se enviarán 3 SMS a cada teléfono de la lista, 2 de 157 y un tercero por los 155 caracteres restantes.</li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                            <p>
+                                                Por lo que si el texto del mensaje es de 175 caracteres y son 10 teléfonos en la lista se enviarán 20 SMS,
+                                                o si el texto del mensaje es de 471 y 10 teléfonos en la lista se enviarán 30 SMS.
+                                            </p>
+                                            <p>
+                                                Si el mensaje <strong>posee</strong> caracteres especiales o acentos.
+                                            </p>
+                                            <ul>
+                                                <li>
+                                                    Si el largo sobrepasa los <strong>70 caracteres</strong> se consideran los primeros <strong>67</strong> un SMS
+                                                    y <strong>por cada 67 caracteres adicionales o su diferencia será 1 SMS</strong>.
+                                                    <ul>
+                                                        <li>Un texto de 120 caracteres se enviarán 2 SMS a cada teléfono de la lista, 1 SMS por los primeros 67 y un segundo SMS de 53 caracteres.</li>
+                                                        <li>Un texto de 168 caracteres se enviarán 3 SMS a cada teléfono de la lista, 2 SMS de 67 y un tercero SMS por los 34 caracteres restantes.</li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                            <p>
+                                                Por lo que si el texto del mensaje es de 120 caracteres y son 10 teléfonos en la lista se enviarán 20 SMS,
+                                                o si el texto del mensaje es de 168 y 10 teléfonos en la lista se enviarán 30 SMS.
+                                            </p>
+                                        </div>
                                         <div class="d-flex justify-content-between align-items-center my-4 gap-10">
+
                                             <button :disabled="loading" class="btn btn-primary">
                                                 <span v-if="!loading">Guardar Campaña</span>
                                                 <span v-else>Cargando...</span>
@@ -229,7 +273,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                     <!-- Modal -->
                                     <div class="modal fade" id="myModal" tabindex="-1" role="dialog"
                                          aria-labelledby="myModalLabel">
-                                        <div class="modal-dialog" role="document">
+                                        <div class="modal-dialog modal-xl" role="document">
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <button type="button" class="close" data-dismiss="modal"
@@ -429,11 +473,19 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
                         let partes = 1;
                         let withCharacter = 'NO';
-                        const regex = new RegExp('[^0-9a-zA-ZñÑ.+-\\/\(\)#%,@:\S+ ]', 'gi');
-                        if (regex.test(message)) {
+
+                        // Detectar caracteres especiales o acentos
+                        const regexEspeciales = /[^\u0000-\u007F]/;
+                        if (regexEspeciales.test(message)) {
                             withCharacter = 'SI';
+
+                            if (largoMensaje > 70) {
+                                partes = Math.ceil((largoMensaje - 67) / 67) + 1;
+                            }
+                        } else {
+
                             if (largoMensaje > 160) {
-                                partes = Math.ceil(largoMensaje / 157);
+                                partes = Math.ceil((largoMensaje - 157) / 157) + 1;
                             }
                         }
 
@@ -442,7 +494,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                             contieneAcentos: withCharacter,
                             largo: largoMensaje,
                             mensaje: message,
-                            telefono: record.FONO,
+                            telefono:  record[this.item.phone],
                         };
                     });
 

@@ -101,7 +101,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
 
         @media (min-width: 992px) {
             .col-md-6 {
-                flex: 0 0 48%;
+                flex: 0 0 50%;
             }
         }
 
@@ -232,7 +232,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             </div>
                                         </div>
 
-                                        <div class="row row-cols-auto">
+                                        <div class="row row-cols-auto gap-5">
                                             <div class="col mb-3" v-for="(item, index) in campaign.step2.customVariables" :key="index">
                                                 <span class="badge bg-primary p-3 text-lg ">{{ item }}</span>
                                             </div>
@@ -327,7 +327,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         <!--                                    Modal-->
                                         <div class="modal fade" id="imageModal" tabindex="-1" role="dialog"
                                              aria-labelledby="imageModalLabel" aria-hidden="true">
-                                            <div class="modal-dialog" role="document">
+                                            <div class="modal-dialog modal-xl" role="document">
                                                 <div class="modal-content">
                                                     <div class="modal-header">
                                                         <button type="button" class="close" data-dismiss="modal"
@@ -361,7 +361,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                         </div>
                                         <div class="col-md-12">
                                             <p><strong>Nombre de la campaña:</strong> {{ campaign.step1.name }}</p>
-                                            <p><strong>Template seleccionado:</strong> {{ campaign.step2.selectedTemplate.name }}
+                                            <p><strong>Plantilla seleccionada:</strong> {{ campaign.step2.selectedTemplate.name }}
                                             </p>
                                         </div>
                                         <div class="col-md-12">
@@ -380,8 +380,8 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                             </button>
                                         </div>
                                         <div class="col-md-12" id="template_content">
-
                                         </div>
+
                                         <button :disabled="end_step" class="btn btn-success" @click="submitForm">Guardar Campaña</button>
                                     </div>
                                     <!--Fin de Paso 3-->
@@ -437,7 +437,6 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                         templatesWithImages: [],
                         selectedTemplate: null,
                         customVariables: [],
-
                     }
                 },
                 step: 1,

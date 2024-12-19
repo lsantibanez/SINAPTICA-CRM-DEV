@@ -46,6 +46,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
     <link rel="stylesheet" href="/css/extra/flatpickr.min.css">
     <link rel="stylesheet" href="/css/extra/toastr.min.css">
     <link href="/css/global/global.css" rel="stylesheet">
+    <link href="/css/global/estilos.css" rel="stylesheet">
     <style>
         .template-image {
             max-width: 150px;
@@ -173,7 +174,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                     <!--Modal-->
                     <div class="modal fade" id="imageModal" tabindex="-1" role="dialog"
                          aria-labelledby="imageModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
+                        <div class="modal-dialog modal-xl" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
@@ -181,7 +182,7 @@ $nombreProyecto = $_SESSION['nombreCedente'];
                                     </button>
                                     <h4 class="modal-title" id="imageModalLabel">Vista Previa de la Imagen</h4>
                                 </div>
-                                <div class="modal-body text-center">
+                                <div class="modal-body items-center ">
                                     <img id="modalImage" src="" alt="Vista Previa Ampliada" class="img-responsive">
                                 </div>
                             </div>
